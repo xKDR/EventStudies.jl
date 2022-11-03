@@ -1,0 +1,7 @@
+name = "EventStudies"
+uuid = "a22a033a-3589-4878-889c-593115a581a1"
+authors = ["xKDR Forum"]
+version = "0.1.0"
+
+[compat]
+julia = "1"
