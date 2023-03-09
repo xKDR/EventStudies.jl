@@ -1,19 +1,10 @@
-function get_period_type(tf::TSFrame)
-    if eltype(tf.Index) <: Number
-        return eltype(tf.Index)
-    else
-        return Day
-    end
-end
+"""
+    abstract type EventStatus
 
-function get_time_type(tf::TSFrame)
-    if eltype(tf.Index) <: Number
-        return eltype(tf.Index)
-    else
-        return Date
-    end
-end
-
+An abstract supertype for all event status types. 
+These are used to indicate the status of an event 
+(i.e., if it was successful or not, and if so why it was unsuccessful).
+"""
 abstract type EventStatus end
 "Represents a successful event"
 struct Success <: EventStatus end
@@ -21,19 +12,30 @@ struct Success <: EventStatus end
 struct WrongSpan <: EventStatus end
 "This means that there was missing data within the window."
 struct DataMissing <: EventStatus end
-struct UnitMissing <: EventStatus end
+"This means that the model was missing data within the event time window."
+struct ModelDataMissing <: EventStatus end
+"This means that the model's index type was incompatible with the event's index type."
+struct ModelIndexIncompatible <: EventStatus end
+# struct UnitMissing <: EventStatus end
 
-function to_eventtime_windowed(return_timeseries::TSFrame, event_times::Vector{Pair{Symbol, T}}, window::Int) where T
-    # @assert length(unique(first.(event_times))) == length(event_times)
-    @assert window ≥ 1
+function to_eventtime_windowed(return_timeseries::TSFrame, event_times::Vector{Pair{Symbol, T}}, window::Int, model::AbstractEventStudyModel = NoModel()) where T
+    @assert window ≥ 1 "The window must have a length greater than 1!  The provided window length was $window."
 
+    # initialize the return codes array
     event_return_codes = EventStatus[]
-
-    # event_timeseries = TSFrame(get_period_type(return_timeseries); n = 1)
-    index_vec = (Base.StepRange(get_period_type(return_timeseries)(-window), get_period_type(return_timeseries)(1), get_period_type(return_timeseries)(window)) .+ get_time_type(return_timeseries)(0)) |> collect
+    # create an index vector which is of the same type as the index of `return_timeseries`.
+    index_vec = collect(
+        Base.StepRange(
+            get_period_type(return_timeseries)(-window), 
+            get_period_type(return_timeseries)(1), 
+            get_period_type(return_timeseries)(window)
+        ) .+ get_time_type(return_timeseries)(0)
+    )
+    # create an empty TSFrame with a populated index, to store the results
     event_timeseries = TSFrame(DataFrame(:Index => index_vec), :Index)
-    # @show event_timeseries index_vec window
-    # iterate over all events
+    show(IOContext(stdout, :compact => true), MIME("text/plain"), index_vec)
+
+    # iterate over all events, process them and store the processed data in `event_timeseries`
     for (colname, event_time) in event_times
         # binary search for the event time
         event_time_index = searchsortedfirst(return_timeseries.Index, event_time)
@@ -44,9 +46,9 @@ function to_eventtime_windowed(return_timeseries::TSFrame, event_times::Vector{P
         end
 
         # extract the data (as a copy)
-        new_data = return_timeseries.coredata[(event_time_index - window):(event_time_index + window), colname]
+        new_data = TSFrame(return_timeseries.coredata[(event_time_index - window):(event_time_index + window), [:Index, colname]], :Index; copycols = false, issorted = false)
         # check that none of the data is `missing`
-        if any(ismissing.(new_data))
+        if any(ismissing.(getproperty(new_data, colname)))
             push!(event_return_codes, DataMissing())
             continue
         end
@@ -54,8 +56,16 @@ function to_eventtime_windowed(return_timeseries::TSFrame, event_times::Vector{P
         # disambiguate the column name in case there are multiple events for the same column
         new_colname = string(colname) in names(event_timeseries) ? gensym(colname) : colname
 
+        # Apply the model, if it exists
+        new_data, success_code = apply_model(model, new_data)
+        # If the model failed, then skip this event, and log that!
+        if success_code != Success()
+            push!(event_return_codes, success_code)
+            continue
+        end
+        show(IOContext(stdout, :compact => true), MIME("text/plain"), new_data)
         # if all criteria check out, then assign the data to the tsframe,
-        event_timeseries.coredata[!, new_colname] = nonmissingtype(eltype(new_data)).(new_data)
+        event_timeseries.coredata[!, new_colname] = getproperty(new_data, colname)
         # and record that this event was successful.
         push!(event_return_codes, Success())
     end

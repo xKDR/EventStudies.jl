@@ -1,4 +1,31 @@
+############################################################
+#                Period and time utilities                 #
+############################################################
 
+function get_period_type(tf::TSFrame)
+    if eltype(tf.Index) <: Number
+        return eltype(tf.Index)
+    else
+        return Day
+    end
+end
+
+function get_time_type(tf::TSFrame)
+    if eltype(tf.Index) <: Number
+        return eltype(tf.Index)
+    else
+        return Date
+    end
+end
+
+############################################################
+#                   Remapping functions                    #
+############################################################
+
+"""
+    remap_cumsum(ts::TSFrame; base = 0)
+
+"""
 function remap_cumsum(ts::TSFrame; base = 0)
     var"length(names(ts.coredata))" = length(names(ts.coredata))
     @assert var"length(names(ts.coredata))" > 1
@@ -11,6 +38,30 @@ function remap_cumsum(ts::TSFrame; base = 0)
         return_ts.coredata[!, col] = cumsum(tmp) 
     end
     return return_ts
+end
+
+function test_remap_cumsum()
+    ts = TSFrame(rand(100, 10), Date(2000, 1, 1):Day(1):Date(2000, 4, 9))
+    remap_cumsum(ts)
+end
+
+"""
+    remap_levels(ts::TSFrame, base = 100)
+
+"""
+function remap_levels(ts::TSFrame, base = 100)
+    return_ts = deepcopy(ts)
+    event_ind = length(return_ts)÷2
+    for column in names(ts)
+        return_ts.coredata[!, column] .*= base/return_ts.coredata[event_ind, column] 
+    end
+    return return_ts
+end
+
+
+function test_remap_levels()
+    ts = TSFrame(rand(100, 10), Date(2000, 1, 1):Day(1):Date(2000, 4, 9))
+    remap_levels(ts)
 end
 
 function Base.cumsum(ts::TSFrame, dims::Int = 1)
