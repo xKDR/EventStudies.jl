@@ -15,11 +15,13 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
+        "Models" => "models.md",
     ],
 )
 
 deploydocs(;
     repo="github.com/xKDR/EventStudies.jl",
     target = "build",
-    devbranch="main"
+    devbranch="main",
+    push_preview = true,
 )
