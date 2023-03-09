@@ -23,8 +23,8 @@ select!(usd_inr.coredata, :Index, :AdjClose => :USDINR)
 
 # US Fed funds rate
 fed_rate = TSFrame(MarketData.fred("FEDFUNDS"))
-fed_rate = TSFrame(fed_rate.coredata[searchsortedfirst(index(fed_rate), Date(2007, 1, 1)):end, :])
-fed_rate_diffs = diff(fed_rate)
+fed_rate_2007 = TSFrame(fed_rate.coredata[searchsortedfirst(index(fed_rate), Date(2007, 1, 1)):end, :])
+fed_rate_diffs = diff(fed_rate_2007)
 dropmissing!(fed_rate_diffs.coredata)
 fed_rate_dates = filter(:VALUE => >(0), fed_rate_diffs.coredata)
 
@@ -32,7 +32,7 @@ fed_rate_dates = filter(:VALUE => >(0), fed_rate_diffs.coredata)
 #                          Nifty                           #
 ############################################################
 
-phystime_returns_ts, event_status = EventStudies.to_eventtime_windowed(levels_to_returns(nifty), (:NIFTY,) .=> fed_rate_dates.Index, 7)
+phystime_returns_ts, event_status = EventStudies.to_eventtime_windowed(levels_to_returns(nifty), (:NIFTY,) .=> fed_rate_dates.Index, 7, MarketModel(levels_to_returns(fed_rate)))
 t0, lower, upper = inference(BootstrapInference(), phystime_returns_ts)
 
 N = 100
