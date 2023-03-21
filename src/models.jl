@@ -67,32 +67,85 @@ function apply_model(model::AbstractEventStudyModel, data::TSFrame)
     # return result_tsframe::TSFrame, success_code::EventStatus
 end
 
+# TODO: this interface is actually incorrect...what we need to do, 
+# is allow the user to pass separate window and estimation periods.
+# then we can window.
+# so, the interface could be:
+# apply_model(model::AbstractEventStudyModel, data::TSFrame, window::Any)::(::TSFrame, ::EventStatus)
+# where data is a TSFrame (TSFrameView?) and we return a windowed TSFrame
+# problems: implementing checks for all the different possible error states
+# when windowing
+# but, if we check earlier, we have to allocate 2 vectors, which is inefficient.
 
 
-function apply_model(model::MarketModel, returns::TSFrame)
-    # @assert index(model.market_returns) == index(returns)
+# Market model implementation
 
-    data_tsframe = TSFrames.join(
-        TSFrame(DataFrame(:Index => index(model.market_returns), :market_returns => model.market_returns.coredata[!, 2]); issorted = true, copycols = false), 
-        returns; 
-        jointype = :JoinRight
-    )
-    # Drop all missing data
-    dropmissing!(data_tsframe)
-    # Fit a generalized linear model
-    glm(Matrix(TSFrame(data_tsframe.coredata[:, Not(:market_returns)]; copycols = false, issorted = true), data_tsframe.market_returns))
+# to note for the future:
+# julia> @macroexpand @formula(a ~ b)
+# :(StatsModels.Term(:a) ~ StatsModels.Term(:b))
+# julia> StatsModels.Term(colname) ~ StatsModels.Term(:b)
+# FormulaTerm
+# Response:
+#   a(unknown)
+# Predictors:
+#   b(unknown)
+
+# julia> @formula(a ~ b)
+# FormulaTerm
+# Response:
+#   a(unknown)
+# Predictors:
+#   b(unknown)
+
+# so you can just use StatsModels.Term in place of `@formula`, IF you don't need fancy packaging.
+function apply_model(model::MarketModel, data::TSFrame, full_column_data::TSFrame, window; strict::Bool = true)
+    # merge the market data with the provided data
+    merged_market_ts = TSFrames.join(model.market_returns, data; jointype = :JoinRight)
+    # if any data is missing, return blank and throw an error
+    if strict && any(ismissing(merged_market_ts.coredata))
+        return TSFrame([]), ModelDataMissing()
+    end
+    # drop all missing data
+    dropmissing!(merged_market_ts.coredata)
+    # create a TSFrame to hold the results
+    return_ts = TSFrame(DataFrame(:Index => index(merged_market_ts)); issorted = true, copycols = false)
+    # the independent variable should be a matrix, 
+    # so we reshape the market_return vector into a matrix
+    market_return_data = reshape(merged_market_ts.coredata[!, first(names(model.market_returns))], length(merged_market_ts), 1)
+    # loop through all columns in `data`, and apply the model to each of them
+    for colname in names(data)
+        # fit a linear model
+        model = GLM.lm(
+            market_return_data,
+            merged_market_ts.coredata[!, colname]
+        )
+        # add the results to the return TSFrame
+        # here, we take the residuals and not the prediction
+        return_ts.coredata[!, colname] = residuals(model)
+    end
+    # return the TSFrame and the event status
+    return return_ts, EventStudies.Success()
 end
 
-function apply_model(model::ExcessReturn, returns::TSFrame)
-    data_tsframe = TSFrames.join(
+# Excess return implementation
+
+function apply_model(model::ExcessReturn, data::TSFrame)
+    # merge the market data with the provided data
+    merged_market_ts = TSFrames.join(
         TSFrame(DataFrame(:Index => index(model.market_returns), :market_returns => model.market_returns.coredata[!, 2]); issorted = true, copycols = false), 
-        returns; 
+        data; 
         jointype = :JoinRight
     )
-    for column in names(returns)
-        data_tsframe.coredata[!, column] .-= data_tsframe.market_returns
+    # if any data is missing, return blank and throw an error
+    if strict && any(ismissing(merged_market_ts.coredata))
+        return TSFrame([]), ModelDataMissing()
     end
-    return (TSFrame(select!(data_tsframe.coredata, Not(:market_returns)); copycols = false, issorted = false), Success())
+    # drop all missing data
+    dropmissing!(merged_market_ts.coredata)
+    for column in names(data)
+        merged_market_ts.coredata[!, column] .-= merged_market_ts.market_returns
+    end
+    return (TSFrame(select!(merged_market_ts.coredata, Not(:market_returns)); copycols = false, issorted = false), Success())
 end
 
 # Constant mean return implementation
