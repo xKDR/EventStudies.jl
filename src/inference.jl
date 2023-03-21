@@ -41,13 +41,14 @@ This forwards to the Wilcoxon inference test from [HypothesisTests.jl](https://g
 
 If `exact = nothing`, then a heuristic determines whether to use the exact or 
 approximate Wilcoxon signed-rank test.  If `exact = true`, then the exact test
-is used; if `exact = false`, then the approximate test is used.
+is used; if `exact = false`, then the approximate test is used.  If `exact = nothing`,
+then a heuristic determines whether to use the exact or approximate tests.
 """
 struct WilcoxonInference{Exact} <: InferenceMethod
 end
 
 function WilcoxonInference(; exact = nothing)
-    @assert exact === nothing || exact isa Bool
+    @assert isnothing(exact) || exact isa Bool
     return WilcoxonInference{exact}()
 end
 
@@ -123,4 +124,34 @@ function inference(::WilcoxonInference{ExactType}, ts::TSFrame, conf = 0.975) wh
         getindex.(conf_ints, 1), # lower
         getindex.(conf_ints, 2)  # upper
     )
+end
+
+
+
+# This function is a convenience wrapper around the inference methods, which returns a specification for an "inference field".
+
+
+"""
+    inference_surface(infer::InferenceMethod, ts::TSFrame, conf = 0.975; density = 200)::(y_values::Matrix, y_colors::Matrix)
+
+
+"""
+function inference_surface(infer::InferenceMethod, ts::TSFrame, max_conf = 0.975; density::Integer = 200)
+    @assert iseven(density) && density > 0 "Density must be an even number and greater than zero."
+    
+    deviations = LinRange(0.5, max_conf, density÷2)
+    
+    y_vals = zeros(Float64, density, length(ts))
+    y_colors = zeros(Float64, density, length(ts))
+    
+    for (y_ind, deviation) in enumerate(deviations)
+        t0, lower, upper = inference(infer, ts, deviation)
+        y_vals[density÷2 - y_ind + 1, :] .= lower
+        y_vals[density÷2 + y_ind , :] .= upper
+        y_colors[density÷2 - y_ind + 1, :] .= 1 - deviation
+        y_colors[density÷2 + y_ind , :] .= deviation 
+    end
+
+    return y_vals, y_colors
+    
 end
