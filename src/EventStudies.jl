@@ -12,8 +12,12 @@ assetpath(args...) = joinpath(dirname(@__DIR__), "assets", args...)
 
 include("utils.jl")
 export remap_cumsum # remove before release
-include("models.jl")
-export NoModel, MarketModel, AugmentedMarketModel, ExcessReturn, ConstantMeanReturn
+# include("models.jl")
+# export NoModel, MarketModel, AugmentedMarketModel, ExcessReturn, ConstantMeanReturn
+include("Models/Models.jl")
+using .Models
+export GLM.StatsBase.fit, apply, MarketModel, MarketModelResult
+
 include("inference.jl")
 export inference, ClassicInference, BootstrapInference, WilcoxonInference
 include("eventstudy.jl")
