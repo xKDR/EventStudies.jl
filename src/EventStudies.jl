@@ -8,6 +8,8 @@ using HypothesisTests, Bootstrap # for inference
 
 using GLM # for models
 
+assetpath(args...) = joinpath(dirname(@__DIR__), "assets", args...)
+
 include("utils.jl")
 export remap_cumsum # remove before release
 include("models.jl")

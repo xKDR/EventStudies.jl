@@ -5,7 +5,20 @@ using Literate
 DocMeta.setdocmeta!(EventStudies, :DocTestSetup, :(using EventStudies); recursive=true)
 
 # First, generate markdown files from the examples!
+example_path = joinpath(@__DIR__, "..", "examples")
+literate_files = joinpath.(
+    example_path,
+    [
+        "mwe.jl",
+        "stock_splits.jl",
+        "nifty.jl",
+        "sex_ratio_at_birth.jl"
+    ]
+)
 
+for file in literate_files
+    Literate.markdown(file, joinpath(@__DIR__, "src", "examples"); documenter = true)
+end
 Literate.markdown(joinpath(@__DIR__, "..", "examples", "mwe.jl"), joinpath(@__DIR__, "src"); documenter = true)
 
 makedocs(;
@@ -21,7 +34,12 @@ makedocs(;
     pages=[
         "Home" => "index.md",
         "Models" => "models.md",
-        "Minimal example" => "mwe.md"
+        "Examples" => [
+            "Minimal example" => "mwe.md",
+            "Stock splits" => "stock_splits.md",
+            "Rate hikes and market indicators" => "nifty.md",
+            "Sex ratio at birth" => "sex_ratio_at_birth.md"
+        ]
     ],
 )
 

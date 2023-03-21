@@ -16,6 +16,7 @@ jobs:
             - uses: actions/checkout@v2
             - uses: julia-actions/cache@v1
             - uses: julia-actions/julia-buildpkg@latest
+            - run:  julia --project=docs -e 'using Pkg; Pkg.add(url = "https://github.com/asinghvi17/TSFrames.jl", rev = "join")'
             - uses: julia-actions/julia-docdeploy@latest
               env:
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

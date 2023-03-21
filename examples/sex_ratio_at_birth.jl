@@ -1,36 +1,33 @@
-using Pkg
-Pkg.add("TSFrames")
-Pkg.add("DataFrames")
-Pkg.add("CSV")
-Pkg.add("CairoMakie")
-Pkg.add(; url = "https://github.com/asinghvi17/EventStudies.jl", rev = "as/eventstudies")
+# # The effect of legislation on sex ratio at birth
 
+# This is an example of using EventStudies on long-form data from social sciences.  Specifically, we're going to be using data which 
 
 ## Load the packages:
-using TSFrames        # time series package - EventStudies only accepts this, since it has a defined index type
-using DataFrames, CSV # data loading + management
-using EventStudies    # event study package
-using CairoMakie      # plotting
-using CairoMaie.Makie # plotting
+using TSFrames         # time series package - EventStudies only accepts this, since it has a defined index type
+using DataFrames, CSV  # data loading + management
+using EventStudies     # event study package
+using CairoMakie       # plotting
+using CairoMakie.Makie # plotting
 
-# load the data
-data = CSV.read("/Users/anshul/Downloads/EVENT-STUDY-MWE/bigdata.csv", DataFrame; missingstring = "NA")
-# group by country
+# Load the data
+data = CSV.read(EventStudies.assetpath("bigdata.csv"), DataFrame; missingstring = "NA")
+# This data is in "long" format, so we need to convert it to "wide" format:
+# Group by country
 country_data = groupby(data, :country)
-# filter to only include countries with events defined
+# Filter to only include countries with events defined
 countries_with_events = filter(sdf -> !(all(ismissing.(sdf.intyear_es))), country_data)
-# create a TSFrame with the `sex_rat` variable for each country
+# Create a TSFrame with the `sex_rat` variable for each country
 relevant_country_ts = TSFrames.join((TSFrame(DataFrame([:Index => sdf.year_es, Symbol(sdf.country[1]) => sdf.sex_rat])) for sdf in countries_with_events)...; jointype = :inner)
-# create a mapping from country to event time, for each event
-# note that this can have multiple events per country
+# Create a mapping from country to event time, for each event.
+# Note that this can have multiple events per country
 event_times = [Symbol(sdf.country[1]) => sdf.intyear_es[findfirst(!ismissing, sdf.intyear_es)] for sdf in countries_with_events]
-# convert to event time
+# Convert to event time using EventStudies.jl (perform the event study).
 eventtime_ts, retcodes = EventStudies.to_eventtime_windowed(levels_to_returns(relevant_country_ts), event_times, 4)
-# perform inference with a 95% confidence interval
+# Perform bootstrap inference with a 95% confidence interval
 t0, lower, upper = inference(BootstrapInference(), eventtime_ts, 0.95)
 # we're technically done with the event study here!
 
-# now, time to plot
+# now, it's time to plot
 # plot each variable in the event study
 fig, ax, plt = series(
     index(eventtime_ts), Matrix(remap_cumsum(eventtime_ts))'; 
@@ -150,6 +147,6 @@ band_plt = band!(ax,
 
 leg = axislegend(ax, position = :lt)
 
-fig
 ylims!(ax, -0.75, 0.75) # match R
 ylims!(ax, -0.5, 0.5) # match R
+fig

@@ -1,9 +1,4 @@
-using Pkg
-Pkg.add("TSFrames")
-Pkg.add("DataFrames")
-Pkg.add("CSV")
-Pkg.add("MarketData")
-Pkg.add(; url = "https://github.com/asinghvi17/EventStudies.jl", rev = "as/eventstudies")
+# # The effect of Fed rate hikes on Indian indicators
 
 
 ## Load the packages:
