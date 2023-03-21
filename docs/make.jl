@@ -1,7 +1,12 @@
 using EventStudies
 using Documenter
+using Literate
 
 DocMeta.setdocmeta!(EventStudies, :DocTestSetup, :(using EventStudies); recursive=true)
+
+# First, generate markdown files from the examples!
+
+Literate.markdown(joinpath(@__DIR__, "..", "examples", "mwe.jl"), joinpath(@__DIR__, "src"); documenter = true)
 
 makedocs(;
     modules=[EventStudies],
@@ -16,6 +21,7 @@ makedocs(;
     pages=[
         "Home" => "index.md",
         "Models" => "models.md",
+        "Minimal example" => "mwe.md"
     ],
 )
 
