@@ -25,6 +25,8 @@ end
 """
     remap_cumsum(ts::TSFrame; base = 0)
 
+This function remaps a time series into its cumulative summation. 
+The first value of each column is set to `base`.
 """
 function remap_cumsum(ts::TSFrame; base = 0)
     var"length(names(ts.coredata))" = length(names(ts.coredata))
@@ -32,8 +34,8 @@ function remap_cumsum(ts::TSFrame; base = 0)
 
     return_ts = TSFrame(ts.coredata; issorted = true, copycols = true)
 
-    for col in 2:var"length(names(ts.coredata))"
-        tmp = return_ts.coredata[!, col]
+    for col in 2:size(ts.coredata, 2)
+        tmp = return_ts.coredata[:, col]
         tmp[1] = base
         return_ts.coredata[!, col] = cumsum(tmp) 
     end
