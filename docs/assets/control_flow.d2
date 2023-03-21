@@ -1,0 +1,47 @@
+input data
+
+input data.ts: Input timeseries\n(TSFrame)
+input data.ts.shape: square
+
+input data.event list: Event list\n(Vector\{Pair\{Symbol, TimeType\}\})
+input data.event list.shape: rectangle
+
+to_eventtime_windowed: to_eventtime_windowed\n(input_timeseries, event_list, window, model)
+to_eventtime_windowed.shape: hexagon
+
+input data -> to_eventtime_windowed
+
+# to_eventtime_windowed parameters: |md
+#   ## Parameters
+#     - `window`: Window size (can be an integer or a vector-like of integers (range, vector))
+#     - `model`: A decorrelation model.  Can be any subtype of `AbstractEventStudyModel`.
+# | {
+#   near: to_eventtime_windowed
+# }
+
+results
+
+results.event_ts: Results of the event study\n(TSFrame)
+results.retcodes: Status codes per event\n(Vector\{EventCode\})
+
+to_eventtime_windowed -> results
+
+inference: inference\n(infer, results, confint)
+inference.shape: hexagon
+
+results -> inference
+
+tlu: t_0, lower, upper
+
+inference -> tlu
+
+inference_surface: inference_surface\n(infer, results, confint)
+inference_surface.shape: hexagon
+inference -> inference_surface: convenience function to get the surface of the inference
+
+# inference parameters: |md
+#   ## Parameters
+#     - `infer`: An inference specification.  Can be conventional inference, one of the many types of bootstrap inference, or Wilcoxson inference.
+# | {
+#   near: inference
+# }
