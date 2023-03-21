@@ -103,7 +103,7 @@ function to_eventtime_windowed(return_timeseries::TSFrame, event_times::Vector{P
         new_colname = string(colname) in names(event_timeseries) ? gensym(colname) : colname
 
         # Apply the model, if it exists
-        new_data, success_code = apply_model(model, new_data)
+        new_data, success_code = apply_model(model, new_data, TSFrame(return_timeseries.coredata[!, [:Index, colname]], :Index; copycols = false, issorted = true), window_vec .+ event_time_index)
         # If the model failed, then skip this event, and log that!
         if success_code != Success()
             push!(event_return_codes, success_code)
