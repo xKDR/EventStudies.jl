@@ -1,10 +1,30 @@
+"""
+    Models
+
+This module implements several decorrelating models for event studies.
+
+## API
+
+The basic API which any `struct MyModel <: Models.AbstractModel` needs to implement is:
+- `StatsBase.fit!(model::MyModel, data::TSFrame)`
+- `StatsBase.predict(model::MyModel, data::TSFrame)`
+
+There is a convenience which allows any model to be fit using `StatsBase.fit(model, data)`.
+In general, the model can be constructed ahead of time by providing the index or market data 
+which it needs to predict.  Then, the model can be fit to the data using `StatsBase.fit!(model, data)`.
+Finally, the model can be applied to the data using `StatsBase.predict(model, data)`.
+
+## Models
+- [`MarketModel`](@ref): A basic market model which calculates ``r_{ind} = r_{firm} - \\alpha - \\beta * r_{market}```
+- [`AugmentedMarketModel`](@ref)
+"""
 module Models
 
 using TSFrames
 using TSFrames.DataFrames
 using GLM
 using GLM.StatsBase
-import StatsBase: fit, fit!
+import StatsBase: fit, fit!, predict
 using DocStringExtensions
 
 """
@@ -29,14 +49,16 @@ function StatsBase.fit!(model::AbstractModel, data::TSFrame)
     error("Not implemented yet for model type $(typeof(model)).")
 end
 
-function apply(model::AbstractModel, data::TSFrame)
+function StatsBase.predict(model::AbstractModel, data::TSFrame)
     error("Not implemented yet for model type $(typeof(model))")
 end
 
-export fit, fit!, apply
+export fit, fit!, predict
 
 include("marketmodel.jl")
-export MarketModel, MarketModelResult
+export MarketModel
 
+include("augmentedmarketmodel.jl")
+export AugmentedMarketModel
 
 end

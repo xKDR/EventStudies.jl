@@ -15,13 +15,12 @@ struct MarketModel <: AbstractModel
     "A TSFrame which holds the market indicator/index data."
     market_returns::TSFrame
     "The coefficients of the fit.  Set by `fit!`."
-    fit::GLM.LinearModel
-    
+    coefs::Vector{Float64}
 end
 
 MarketModel(market_returns::TSFrame) = MarketModel(market_returns, Float64[NaN64, NaN64])
 
-function GLM.StatsBase.fit!(model::MarketModel, data::TSFrame; debug = false)
+function StatsBase.fit!(model::MarketModel, data::TSFrame; debug = false)
     # merge the market data with the provided data
     merged_market_ts = TSFrames.join(model.market_returns, data; jointype = :JoinRight)
     # the independent variable should be a matrix, 
@@ -39,8 +38,14 @@ function GLM.StatsBase.fit!(model::MarketModel, data::TSFrame; debug = false)
     return model
 end
 
+function StatsBase.fit(model::MarketModel, data::TSFrame; debug = false)
+    new_model = MarketModel(model.market_returns)
+    fit!(new_model, data; debug)
+    return new_model
+end
 
-function apply(model::MarketModel, data::TSFrame)
+
+function StatsBase.predict(model::MarketModel, data::TSFrame)
     ret = deepcopy(data)
     market_data = TSFrame(TSFrames.DataFrames.leftjoin(data.coredata, model.market_returns.coredata; on = :Index))#TSFrames.join(data, model.market_returns; jointype = :JoinRight)
     for col in names(data)

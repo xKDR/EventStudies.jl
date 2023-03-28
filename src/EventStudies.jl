@@ -4,6 +4,8 @@ using Dates, Statistics
 
 using TSFrames, DataFrames
 
+using ThreadPools # efficient multithreading
+
 using HypothesisTests, Bootstrap # for inference
 
 using GLM # for models

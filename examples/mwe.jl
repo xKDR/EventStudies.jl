@@ -3,9 +3,10 @@
 # We create and use synthetic data, show how to use the EventStudies.jl API, and plot it!
 
 # First, we load the packages:
-using TSFrames     # EventStudies operates exclusively on TSFrames
+using TSFrames      # EventStudies operates exclusively on TSFrames
 using EventStudies 
-using CairoMakie        # For plotting
+using CairoMakie    # For plotting
+CairoMakie.activate!(px_per_unit = 2, pt_per_unit = 1, type = :svg) # hide
 
 # ## Creating a dataset
 
@@ -40,7 +41,7 @@ event_list = [:var1 => 5, :var2 => 6]
 # between the log-transformed measurements, or `diff(log(ts))`.  So, we'll convert our data to returns using the [`EventStudies.levels_to_returns`](@ref) function.
 # To do this, we'll use the [`EventStudies.to_eventtime_windowed`](@ref) function, which takes in a `TSFrame` of returns, a list of events, and a window size.
 
-eventtime_returns_ts, statuses = EventStudies.to_eventtime_windowed(levels_to_returns(ts1), event_list, 2)
+eventtime_returns_ts, statuses = EventStudies.physical_to_event_time(levels_to_returns(ts1), event_list, 2)
 
 # The `eventtime_returns_ts` is a `TSFrame` with the same columns as `ts1`, but with a new index.  This index takes the form of "event time", which is the time relative to the event.
 # All columns share the same index.  `statuses` represents the status of each event as a [`EventStatus`](@ref) object.  In this case, all events were successful.
@@ -57,9 +58,11 @@ confints = EventStudies.inference(EventStudies.BootstrapInference(), eventtime_c
 
 # ## Plotting
 # Now, we can plot the results.  We'll use Makie.jl for this.
-f, a, p = series(eventtime_cum_ts.Index, Matrix(eventtime_cum_ts)'; axis = (xlabel = "Event time", ylabel = "Cumulative return (%)"))
-band!(eventtime_cum_ts.Index, confints[2], confints[3])
-lines!(eventtime_cum_ts.Index, confints[1])
+f, a, p = series(eventtime_cum_ts.Index, Matrix(eventtime_cum_ts)'; labels = ["Event 1", "Event 2"], axis = (xlabel = "Event time", ylabel = "Cumulative return (%)"))
+band!(eventtime_cum_ts.Index, confints[2], confints[3]; color = Makie.wong_colors(0.5)[3], label = "95% Confidence interval")
+lines!(eventtime_cum_ts.Index, confints[1]; label = "Mean")
+axislegend(a; position = :rb)
 f
 
 # And that's our event study!
+ 
