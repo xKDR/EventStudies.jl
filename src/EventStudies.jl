@@ -4,7 +4,7 @@ using Pkg, Dates, Statistics
 using Pkg.Artifacts
 
 using TSFrames, DataFrames
-using RData, CSV # used only to load example data!
+using RData, CodecXz, CSV # used only to load example data!
 
 using ThreadPools # efficient multithreading
 
