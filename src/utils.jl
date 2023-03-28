@@ -123,15 +123,21 @@ end
 # we could make this blursed type-piracy, but that seems too general :D
 function zoo_to_tsframe(rv::RData.RVector{Float64, 0x0e})
     @assert rv.attr["class"].data[1] == "zoo" # this must be a zoo object!
-    dims = rv.attr["dim"].data
-    datamatrix = reshape(rv.data, dims...)
+    dims = haskey(rv.attr, "dim") ? rv.attr["dim"].data : length(rv.data)
+    datamatrix = if any(isnan, rv.data)
+        reshape(replace!(Vector{Union{Float64, Missing}}(rv.data), NaN=>missing), dims...)
+    else
+        reshape(rv.data, dims...)
+    end
     # this is the difference factor between R and Julia date integers,
     # since Julia uses UTD
     index = if rv.attr["index"].attr["class"].data[1] == "Date"
         Dates.Date.(Dates.UTD.(rv.attr["index"].data .+ 719163))
+    elseif rv.attr["index"].attr["class"].data[1] == "POSIXct"
+        RData.jlvec(RData.ZonedDateTime, rv.attr["index"], false)
     else
         rv.attr["index"].data
     end
-    colnames = rv.attr["dimnames"].data[2].data
+    colnames = haskey(rv.attr, "dimnames") ? rv.attr["dimnames"].data[2].data : Symbol.(("x_",), 1:size(datamatrix, 2))
     return TSFrame(DataFrame(Symbol.(colnames) .=> eachcol(datamatrix)), index; copycols = false, issorted = true)
 end

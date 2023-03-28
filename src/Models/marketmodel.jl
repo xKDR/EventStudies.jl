@@ -36,8 +36,16 @@ MarketModel(market_returns::TSFrame) = MarketModel(market_returns, Float64[NaN64
 
 # We define a short method to check whether a window is located within the model's market return timeseries:
 function check_window(model::MarketModel, window)
-    @assert eltype(window) == eltype(index(model.market_returns)) # error if the index types are not the same
-    return first(window) ≥ first(index(model.market_returns)) && last(window) ≤ last(index(model.market_returns)) # check if the window is within the market returns' timespan
+    ## error if the index types are not the same
+    @assert eltype(window) == eltype(index(model.market_returns)) 
+    ## check if the window is within the market returns' timespan
+    window_compatible = first(window) ≥ first(index(model.market_returns)) && last(window) ≤ last(index(model.market_returns)) 
+    ## check if any of the market data in the window has missing values
+    ## TODO: This is a hack which should have a more elegant solution - maybe passing event time and window vec directly?
+    integer_first_index = searchsortedfirst(index(model.market_returns), first(window))
+    integer_last_index = searchsortedlast(index(model.market_returns), last(window))
+    market_data_compatible = !any(ismissing.(model.market_returns.coredata[integer_first_index:integer_last_index, 2]))
+    return window_compatible & market_data_compatible
 end
 
 

@@ -34,17 +34,29 @@ ts1 = TSFrame(
 # The first element of the pair is the name of the column in `ts1` that we want to use as the event.
 # The second element is the time of the event.  This can be in any type `DateType` which TSFrames supports,
 # which for now is restricted to `Int`, `Dates.Date`, and `Dates.DateTime`.
-event_list = [:var1 => 5, :var2 => 6]
+event_list = [:var1 => 5, :var2 => 6, :var2 => 15]
 
 # Our dataset is the form of absolute measurements, `levels` in `EventStudies.jl` parlance.
 # However, event studies function best when given data in the form of _returns_, which are the difference 
 # between the log-transformed measurements, or `diff(log(ts))`.  So, we'll convert our data to returns using the [`EventStudies.levels_to_returns`](@ref) function.
-# To do this, we'll use the [`EventStudies.to_eventtime_windowed`](@ref) function, which takes in a `TSFrame` of returns, a list of events, and a window size.
 
-eventtime_returns_ts, statuses = EventStudies.physical_to_event_time(levels_to_returns(ts1), event_list, 2)
+# To do this, we'll use the [`EventStudies.eventstudy`](@ref) function, which takes in a `TSFrame` of returns, a list of events, and a window size.
+
+eventtime_returns_ts, event_return_codes = EventStudies.eventstudy(
+    levels_to_returns(ts1), # the dataset, converted from "levels"
+    event_list,             # the list of events, as :colname => event_time
+    2                       # the width of the window, i.e., `-2:2`.
+)
 
 # The `eventtime_returns_ts` is a `TSFrame` with the same columns as `ts1`, but with a new index.  This index takes the form of "event time", which is the time relative to the event.
-# All columns share the same index.  `statuses` represents the status of each event as a [`EventStatus`](@ref) object.  In this case, all events were successful.
+
+# All columns share the same index.  `statuses` represents the status of each event as a [`EventStatus`](@ref) object.  
+# In this case, the first two events were successful ([`EventStudies.Success`](@ref)) but the last one was unsuccessful.
+
+# This is because the last event was too close to the end of the dataset to have a full window, so it was discarded, as indicated
+# by the [`EventStudies.WrongSpan`](@ref) error code.
+
+# Note that in this case, we have 3 events, but only 2 columns.  This is because the third event is too close to the end of the dataset to have a full window, so it's discarded.
 
 # Now, we can compute the cumulative returns, and the confidence intervals using the [`EventStudies.remap_cumsum`](@ref) and [`EventStudies.inference`](@ref) functions.
 # The `remap_cumsum` function takes in a `TSFrame` of returns, and returns a `TSFrame` of cumulative returns.  You can think of cumulative returns as 

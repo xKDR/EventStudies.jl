@@ -14,6 +14,8 @@ struct WrongSpan <: EventStatus end
 struct DataMissing <: EventStatus end
 "This means that the model was missing data within the event time window."
 struct ModelDataMissing <: EventStatus end
+"This means that the data had a missing value after the model's prediction."
+struct MissingAfterModel <: EventStatus end
 "This means that the model's index type was incompatible with the event's index type."
 struct ModelIndexIncompatible <: EventStatus end
 "This means that the column name was not found in the data.  It prints the column name.  Equivalent to `unitmissing` in `eventstudies.R`."
@@ -124,14 +126,19 @@ function eventstudy(
         # Encode the event in metadata
         DataFrames.colmetadata!(event_timeseries.coredata, colname, "event", string(event); style = :note)
     end
+
     # end
 
-    verbose && @info """
-    Out of $(length(event_times)) events, $(count(x -> x == Success(), event_return_codes)) were successful 
-    (i.e., no missing data, no invalid column names, and no invalid time spans).
+    if verbose
+        num_success = length(event_tsframes)
+        @info """
+        Out of $(length(event_times)) events, $(num_success) were successful 
+        (i.e., no missing data, no invalid column names, and no invalid time spans).
 
-    This is a success rate of $(round(100 * count(x -> x == Success(), event_return_codes) / length(event_times), digits = 2))%.
-    """
+        This is a success rate of $(round(100 * num_success / length(event_times), digits = 2))%.
+        """
+    end
+
     # return the event timeseries and success codes
     return (event_timeseries, event_return_codes)
 end

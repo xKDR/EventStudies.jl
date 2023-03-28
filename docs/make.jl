@@ -25,7 +25,9 @@ literate_files = joinpath.(
 for file in literate_files
     Literate.markdown(file, joinpath(@__DIR__, "src", "examples"); documenter = true)
 end
-# Literate.markdown(joinpath(@__DIR__, "..", "examples", "mwe.jl"), joinpath(@__DIR__, "src"); documenter = true)
+
+# also make the definition of `MarketModel` a Literate file (but do not execute)
+Literate.markdown(joinpath(@__DIR__, "..", "src", "Models", "marketmodel.jl"), joinpath(@__DIR__, "src"); documenter = false)
 
 makedocs(;
     modules=[EventStudies],
@@ -39,12 +41,17 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
+        "Event time" => "event_time.md"
         "Models" => "models.md",
         "Examples" => [
             "Minimal example" => "examples/mwe.md",
             # "Stock splits" => "stock_splits.md",
             "Rate hikes and market indicators" => "examples/nifty.md",
-            # "Sex ratio at birth" => "sex_ratio_at_birth.md"
+            # "Sex ratio at birth" => "sex_ratio_at_birth.md",
+            # "Replicating eventstudies.R" => "replications.jl",
+        ],
+        "Developer docs" => [
+            "Market model implementation" => "marketmodel.md"
         ]
     ],
 )
