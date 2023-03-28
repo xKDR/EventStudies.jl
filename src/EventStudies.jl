@@ -13,7 +13,7 @@ using GLM # for models
 assetpath(args...) = joinpath(dirname(@__DIR__), "assets", args...)
 
 include("utils.jl")
-export remap_cumsum # remove before release
+export remap_cumsum, levels_to_returns # remove before release
 # include("models.jl")
 # export NoModel, MarketModel, AugmentedMarketModel, ExcessReturn, ConstantMeanReturn
 include("Models/Models.jl")
@@ -24,6 +24,6 @@ export MarketModel, MarketModelResult
 include("inference.jl")
 export inference, ClassicInference, BootstrapInference, WilcoxonInference
 include("eventstudy.jl")
-export to_eventtime_windowed, levels_to_returns
+export eventstudy
 
 end

@@ -88,3 +88,33 @@ function row_cumsum(ts::TSFrame)
     new_ts = TSFrame(map(sum, eachrow(Matrix(ts))), ts.Index; copycols = false, issorted = true)
     return new_ts
 end
+
+############################################################
+#                    Levels to returns                     #
+############################################################
+
+"""
+    levels_to_returns(ts::TSFrame [, base = 100])::TSFrame
+
+Converts the data in `ts` into "returns" data, i.e., executes `diff(log(ts)) .* base` on each column of `ts`.
+"""
+function levels_to_returns(ts::TSFrame, base = 100)
+    # # first, apply log to the TSFrame's values
+    # log_ts = Base.materialize(Base.broadcasted(x -> log.(ℯ, x), ts; renamecols = false))
+    # # now, rename since TSFrames auto-renames when broadcasting
+    # rename_sources = propertynames(log_ts.coredata[!, Not(:Index)])
+    # rename_sinks = Symbol.(string.(rename_sources) .|> x -> x[1:end-4])
+    # TSFrames.DataFrames.rename!(log_ts.coredata, (rename_sources .=> rename_sinks)...)
+    # # finally, return diff(log)
+    # return diff(log_ts) .* 100
+
+    # slice the input TSFrame from the 2nd row to the last
+    # since `diff` consumes the first row
+    return_ts = TSFrame(ts.coredata[2:end, :], :Index; copycols = false, issorted = true)
+
+    for colname in names(ts)
+        return_ts.coredata[!, colname] = base .* diff(log.(ts.coredata[!, colname]))
+    end
+
+    return return_ts
+end

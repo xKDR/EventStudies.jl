@@ -55,6 +55,9 @@ end
 
 export fit, fit!, predict
 
+include("simplemodels.jl")
+export ConstantMeanReturn, ExcessReturn
+
 include("marketmodel.jl")
 export MarketModel
 
