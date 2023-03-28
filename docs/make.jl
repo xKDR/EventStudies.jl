@@ -46,8 +46,8 @@ makedocs(;
         "Examples" => [
             "Minimal example" => "examples/mwe.md",
             "Rate hikes and market indicators" => "examples/nifty.md",
-            "Sex ratio at birth" => "sex_ratio_at_birth.md",
-            "Replicating eventstudies.R" => "replications.jl",
+            "Sex ratio at birth" => "examples/sex_ratio_at_birth.md",
+            "Replicating eventstudies.R" => "examples/replications.jl",
         ],
         "Developer docs" => [
             "Artifacts and data" => "artifacts.md",
