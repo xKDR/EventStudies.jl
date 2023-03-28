@@ -38,9 +38,9 @@ makedocs(;
         "Home" => "index.md",
         "Models" => "models.md",
         "Examples" => [
-            "Minimal example" => "mwe.md",
+            "Minimal example" => "examples/mwe.md",
             # "Stock splits" => "stock_splits.md",
-            "Rate hikes and market indicators" => "nifty.md",
+            "Rate hikes and market indicators" => "examples/nifty.md",
             # "Sex ratio at birth" => "sex_ratio_at_birth.md"
         ]
     ],
