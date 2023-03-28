@@ -2,6 +2,9 @@ using EventStudies
 using Documenter
 using Literate
 
+using CairoMakie
+Makie.inline!(true)
+
 DocMeta.setdocmeta!(EventStudies, :DocTestSetup, :(using EventStudies); recursive=true)
 
 # Copy the README over as index.md
