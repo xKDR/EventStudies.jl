@@ -8,6 +8,8 @@ This module implements several decorrelating models for event studies.
 The basic API which any `struct MyModel <: Models.AbstractModel` needs to implement is:
 - `StatsBase.fit!(model::MyModel, data::TSFrame)`
 - `StatsBase.predict(model::MyModel, data::TSFrame)`
+Optionally,
+- `Models.check_window(model::MyModel, window::AbstractVector{Int}, event_time)::Bool`
 
 There is a convenience which allows any model to be fit using `StatsBase.fit(model, data)`.
 In general, the model can be constructed ahead of time by providing the index or market data 
@@ -31,7 +33,8 @@ using DocStringExtensions
     abstract type Models.AbstractModel
 
 Abstract type for models used in EventStudies.jl.
-Any model should implement the `StatsBase.fit!(model, data::TSFrame)`
+Any model should implement:
+`StatsBase.fit!(model, data::TSFrame)`
 and `Models.apply(model, data::TSFrame)`.
 """
 abstract type AbstractModel end
@@ -53,7 +56,7 @@ function StatsBase.predict(model::AbstractModel, data::TSFrame)
     error("Not implemented yet for model type $(typeof(model))")
 end
 
-function check_window(model, window)
+function check_window(model, window, event_time)
     true
 end
 

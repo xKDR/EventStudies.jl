@@ -110,7 +110,7 @@ function eventstudy(
 
     # @timeit to "Constructing return object" begin
     # create an empty TSFrame with a populated index, to store the results
-    event_timeseries = TSFrame(DataFrame(:Index => index_vec), :Index)
+    event_timeseries = TSFrame(DataFrame(:Index => window_vec), :Index)
     # finally, push the events to the TSFrame, and add some metadata
     for (ts, event) in zip(event_tsframes, event_times[applicable_event_indices])
         # Find and disambiguate the column name
@@ -149,7 +149,6 @@ function physical_to_event_time(return_timeseries::TSFrame, event_times::Vector{
     event_return_codes = EventStatus[]
     # create an index vector which is of the same type as the index of `return_timeseries`.
     window_vec = window_to_range(window)
-    index_vec = get_period_type(return_timeseries).(window_vec) #.+ get_time_type(return_timeseries)(0)
 
     # precomputed values for "bounds checking"/index validation
     minimum_index = abs(minimum(window_vec))
@@ -183,7 +182,7 @@ function physical_to_event_time(return_timeseries::TSFrame, event_times::Vector{
             continue
         end
 
-        if !Models.check_window(model, index_vec .+ index(return_timeseries)[event_time_index])
+        if !Models.check_window(model, window_vec, event_time)
             push!(event_return_codes, ModelDataMissing())
             continue
         end

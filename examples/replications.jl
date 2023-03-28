@@ -71,9 +71,20 @@ Makie.current_figure()
 
 # ## Intraday data
 
-stock_returns = EventStudies.zoo_to_tsframe(RData.load("/Users/anshul/Documents/Business/India/XKDR/code/eventstudies/data/AggregateReturns.rda"; convert = false)["AggregateReturns"])
+aggregate_returns = EventStudies.zoo_to_tsframe(RData.load("/Users/anshul/Documents/Business/India/XKDR/code/eventstudies/data/AggregateReturns.rda"; convert = false)["AggregateReturns"])
 rate_cuts_df = RData.load("/Users/anshul/Documents/Business/India/XKDR/code/eventstudies/data/RateCuts.rda"; convert = true)["RateCuts"]
-other_returns = EventStudies.zoo_to_tsframe(RData.load("/Users/anshul/Documents/Business/India/XKDR/code/eventstudies/data/IndexReturns.rda"; convert = false)["IndexReturns"])
+index_returns = EventStudies.zoo_to_tsframe(RData.load("/Users/anshul/Documents/Business/India/XKDR/code/eventstudies/data/IndexReturns.rda"; convert = false)["IndexReturns"])
+
+intraday_eventtime_ts, event_return_codes = eventstudy(
+    aggregate_returns,
+    Symbol.(rate_cuts_df.name) .=> rate_cuts_df.when,
+    -34:35,
+    MarketModel(index_returns[:, [:x_1]])
+    )
+
+intraday_eventtime_ts.coredata[1, :] .= 0
+
+t0, lower, upper = EventStudies.inference(BootstrapInference(), intraday_eventtime_ts |> EventStudies.remap_cumsum)
 
 
 

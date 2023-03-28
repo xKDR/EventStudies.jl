@@ -6,7 +6,7 @@ input data.ts.shape: square
 input data.event list: Event list\n(Vector\{Pair\{Symbol, TimeType\}\})
 input data.event list.shape: rectangle
 
-to_eventtime_windowed: to_eventtime_windowed\n(input_timeseries, event_list, window, model)
+to_eventtime_windowed: physical_to_event_time\n(input_timeseries, event_list, window, model)
 to_eventtime_windowed.shape: hexagon
 
 input data -> to_eventtime_windowed
