@@ -53,7 +53,11 @@ function StatsBase.predict(model::AbstractModel, data::TSFrame)
     error("Not implemented yet for model type $(typeof(model))")
 end
 
-export fit, fit!, predict
+function check_window(model, window)
+    true
+end
+
+export fit, fit!, predict, check_window
 
 include("simplemodels.jl")
 export ConstantMeanReturn, ExcessReturn

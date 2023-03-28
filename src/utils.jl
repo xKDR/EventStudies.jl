@@ -118,3 +118,20 @@ function levels_to_returns(ts::TSFrame, base = 100)
 
     return return_ts
 end
+
+# TSFrames-RData interop
+# we could make this blursed type-piracy, but that seems too general :D
+function zoo_to_tsframe(rv::RData.RVector{Float64, 0x0e})
+    @assert rv.attr["class"].data[1] == "zoo" # this must be a zoo object!
+    dims = rv.attr["dim"].data
+    datamatrix = reshape(rv.data, dims...)
+    # this is the difference factor between R and Julia date integers,
+    # since Julia uses UTD
+    index = if rv.attr["index"].attr["class"].data[1] == "Date"
+        Dates.Date.(Dates.UTD.(rv.attr["index"].data .+ 719163))
+    else
+        rv.attr["index"].data
+    end
+    colnames = rv.attr["dimnames"].data[2].data
+    return TSFrame(DataFrame(Symbol.(colnames) .=> eachcol(datamatrix)), index; copycols = false, issorted = true)
+end

@@ -1,3 +1,9 @@
+# # Creating a market model using TSFrames
+
+# In this example, we will create a market model, and create dispatches on StatsBase functions to define how to fit and apply the model.
+
+# First, we define the struct:
+
 """
     struct MarketModel <: AbstractModel
     MarketModel(market_returns::TSFrame)
@@ -17,12 +23,29 @@ struct MarketModel <: AbstractModel
     coefs::Vector{Float64}
 end
 
+# This has two fields, `market_returns` which holds the market's returns (`diff(log.(price_at_close))`) 
+# as a timeseries (`TSFrame`), and a vector of coefficients (in our case, this is ``\alpha`` and ``\beta``).
+
+# You might notice that `coefs` is a vector and not a 2-tuple, which seems more efficient; however, 
+# we want to be able to mutate the coefficients after construction, so we use a `Vector`, which is mutable.
+
+# This defines a convenience constructor, to construct a model without fitting it.  
+# Note that the `coefs` field is set to `NaN` by default, so that if the model is used before fitting, 
+# it will return all NaNs to indicate that something is wrong.
 MarketModel(market_returns::TSFrame) = MarketModel(market_returns, Float64[NaN64, NaN64])
 
-function StatsBase.fit!(model::MarketModel, data::TSFrame; debug = false)
-    # merge the market data with the provided data
+# We define a short method to check whether a window is located within the model's market return timeseries:
+function check_window(model::MarketModel, window)
+    @assert eltype(window) == eltype(index(model.market_returns)) # error if the index types are not the same
+    return first(window) ≥ first(index(model.market_returns)) && last(window) ≤ last(index(model.market_returns)) # check if the window is within the market returns' timespan
+end
+
+
+# Now, we move on to fitting the model.  This is simple enough, just defining an overload for `StatsBase.fit!`, which uses a linear model from GLM.jl.
+function StatsBase.fit!(model::MarketModel, data::TSFrame)
+    ## merge the market data with the provided data
     merged_market_ts = TSFrames.join(model.market_returns, data; jointype = :JoinRight)
-    # loop through all columns in `data`, and apply the model to each of them
+    ## apply the model to the data
     linear_model = GLM.lm(
         GLM.Term(Symbol(first(names(data)))) ~ GLM.Term(Symbol(first(names(model.market_returns)))),
         merged_market_ts.coredata[!, 2:end]
@@ -34,22 +57,31 @@ function StatsBase.fit!(model::MarketModel, data::TSFrame; debug = false)
     return model
 end
 
-function StatsBase.fit(model::MarketModel, data::TSFrame; debug = false)
+# By using the verbose `GLM.Term(Symbol(...))` syntax, we were able to replicate the behaviour of the `@formula` macro from GLM programmatically.  
+# This lets us hook in to the nice GLM machinery for fitting tables, as opposed to fitting matrices which is less nice.
+
+# Now, we define a convenience function to fit the model, which returns a new model, rather than mutating the old one.
+function StatsBase.fit(model::MarketModel, data::TSFrame)
     new_model = MarketModel(model.market_returns)
-    fit!(new_model, data; debug)
+    fit!(new_model, data)
     return new_model
 end
 
-
+# Finally, we define a function to apply the model to data.  This is a bit more complicated, as we need to do some data manipulation to get the data into the right shape.
+# Basically, we merge teh market data with the intercecpt data (so that their time indices are aligned to the input), and then subtract the intercept (``\alpha``), 
+# and the slope (``\beta``) times the market data from the data.
 function StatsBase.predict(model::MarketModel, data::TSFrame)
     ret = deepcopy(data)
-    market_data = TSFrame(TSFrames.DataFrames.leftjoin(data.coredata, model.market_returns.coredata; on = :Index))#TSFrames.join(data, model.market_returns; jointype = :JoinRight)
+    market_data = TSFrame(TSFrames.DataFrames.leftjoin(data.coredata, model.market_returns.coredata; on = :Index))
     for col in names(data)
         ret.coredata[!, col] = data.coredata[!, col] .- model.coefs[1] .- model.coefs[2] .* market_data.coredata[!, first(names(model.market_returns))]
     end
     return ret
 end
 
+
+# Below is some code to make use of this market model:
+# ```julia
 # model = MarketModel(nifty_returns)
 # GLM.StatsBase.fit!(model, data)
 # ret = apply(model, TSFrame(data.coredata[5000:end, :]))
@@ -65,3 +97,4 @@ end
 # axislegend(a, position = :rb)
 # a.title = "Market model on NIFTY index"
 # f
+# ```

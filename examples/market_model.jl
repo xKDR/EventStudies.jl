@@ -57,13 +57,11 @@ f
 
 # We perform an eventstudy while passing this market model:
 
-using TimerOutputs, BenchmarkTools
+using BenchmarkTools
 event_times = rand(1000:2000, 1000)
 event_cols = rand(names(nifty_ticker_returns_tsframe), 1000)
 
-const to = TimerOutputs.TimerOutput()
-TimerOutputs.reset_timer!(to)
-@benchmark @time eventtime_return_ts, success_codes = EventStudies.eventstudy(
+@benchmark eventtime_return_ts, success_codes = EventStudies.eventstudy(
     nifty_ticker_returns_tsframe,
     Symbol.(event_cols) .=> index(nifty_returns)[event_times],
     20,

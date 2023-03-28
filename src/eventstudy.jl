@@ -36,7 +36,7 @@ end
 
 # Allow any Tables.jl table to be used in `physical_to_event_time`,
 # by converting to a TSFrame
-eventstudy(return_timeseries, event_times::Vector{Pair{Symbol, T}}, window::Union{Integer, AbstractVector{<: Integer}}, args...; kwargs...) where T = physical_to_event_time(TSFrame(return_timeseries; copycols = false), event_times, window, args...; kwargs...)
+eventstudy(return_timeseries, event_times::Vector{Pair{Symbol, T}}, window::Union{Integer, AbstractVector{<: Integer}}, args...; kwargs...) where T = eventstudy(TSFrame(return_timeseries; copycols = false), event_times, window, args...; kwargs...)
 
 """
     eventstudy(
@@ -75,7 +75,7 @@ function eventstudy(
 
     # @timeit to "Physical to event time" begin
     # Convert from physical (real) to event time (centered around 0)
-    event_tsframes, event_time_indices, event_return_codes = physical_to_event_time(return_timeseries, event_times, window_vec)
+    event_tsframes, event_time_indices, event_return_codes = physical_to_event_time(return_timeseries, event_times, window_vec, model)
     # Make sure that at least one event was successful
     if !any(x -> x isa Success, event_return_codes)
         @warn "No events were successful!  Returning an empty TSFrame."
@@ -98,7 +98,6 @@ function eventstudy(
         ThreadPools.qmap(zip(event_time_indices, event_tsframes)) do (event_time_index, event_data)
             colname = names(event_data)[1]
             # fit the model to all data before the window
-            first_date = first(index(event_data))
             model = fit(model, return_timeseries[1:(event_time_index - first_window_offset), [Symbol(colname)]])
             # apply the model to the event data
             # `predict` returns a TSFrame in the same format as the input
@@ -137,12 +136,13 @@ function eventstudy(
     return (event_timeseries, event_return_codes)
 end
 
-function physical_to_event_time(return_timeseries::TSFrame, event_times::Vector{Pair{Symbol, T}}, window::Union{Integer, AbstractVector{<: Integer}}) where T
+function physical_to_event_time(return_timeseries::TSFrame, event_times::Vector{Pair{Symbol, T}}, window::Union{Integer, AbstractVector{<: Integer}}, model = nothing) where T
 
     # initialize the return codes array
     event_return_codes = EventStatus[]
     # create an index vector which is of the same type as the index of `return_timeseries`.
     window_vec = window_to_range(window)
+    index_vec = get_period_type(return_timeseries).(window_vec) #.+ get_time_type(return_timeseries)(0)
 
     # precomputed values for "bounds checking"/index validation
     minimum_index = abs(minimum(window_vec))
@@ -176,6 +176,11 @@ function physical_to_event_time(return_timeseries::TSFrame, event_times::Vector{
             continue
         end
 
+        if !Models.check_window(model, index_vec .+ index(return_timeseries)[event_time_index])
+            push!(event_return_codes, ModelDataMissing())
+            continue
+        end
+
         # extract the data (as a copy)
         new_data = return_timeseries[window_vec .+ event_time_index, [colname]]
         # check that none of the data is `missing`
@@ -196,28 +201,4 @@ function physical_to_event_time(return_timeseries::TSFrame, event_times::Vector{
     end
 
     return event_tsframes, event_time_indices, event_return_codes
-end
-
-"""
-    levels_to_returns(ts::TSFrame)::TSFrame
-
-Converts the data in `ts` into "returns" data, i.e., executes `diff(log(ts)) .* 100` on each column of `ts`.
-"""
-function levels_to_returns(ts::TSFrame)
-    # # first, apply log to the TSFrame's values
-    # log_ts = Base.materialize(Base.broadcasted(x -> log.(ℯ, x), ts; renamecols = false))
-    # # now, rename since TSFrames auto-renames when broadcasting
-    # rename_sources = propertynames(log_ts.coredata[!, Not(:Index)])
-    # rename_sinks = Symbol.(string.(rename_sources) .|> x -> x[1:end-4])
-    # TSFrames.DataFrames.rename!(log_ts.coredata, (rename_sources .=> rename_sinks)...)
-    # # finally, return diff(log)
-    # return diff(log_ts) .* 100
-
-    return_ts = TSFrame(ts.coredata[2:end, :], :Index; copycols = false, issorted = true)
-
-    for colname in names(ts)
-        return_ts.coredata[!, colname] = 100 .* diff(log.(ts.coredata[!, colname]))
-    end
-
-    return return_ts
 end

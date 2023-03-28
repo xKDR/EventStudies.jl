@@ -4,22 +4,25 @@ using Literate
 
 DocMeta.setdocmeta!(EventStudies, :DocTestSetup, :(using EventStudies); recursive=true)
 
-# First, generate markdown files from the examples!
-example_path = joinpath(@__DIR__, "..", "examples")
+# Copy the README over as index.md
+cp(joinpath(dirname(@__DIR__), "README.md"), joinpath(@__DIR__, "src", "index.md"))
+
+# Generate markdown files from the examples!
+example_path = joinpath(dirname(@__DIR__), "examples")
 literate_files = joinpath.(
     example_path,
     [
         "mwe.jl",
-        "stock_splits.jl",
+        # "stock_splits.jl",
         "nifty.jl",
-        "sex_ratio_at_birth.jl"
+        # "sex_ratio_at_birth.jl"
     ]
 )
 
 for file in literate_files
     Literate.markdown(file, joinpath(@__DIR__, "src", "examples"); documenter = true)
 end
-Literate.markdown(joinpath(@__DIR__, "..", "examples", "mwe.jl"), joinpath(@__DIR__, "src"); documenter = true)
+# Literate.markdown(joinpath(@__DIR__, "..", "examples", "mwe.jl"), joinpath(@__DIR__, "src"); documenter = true)
 
 makedocs(;
     modules=[EventStudies],
@@ -36,9 +39,9 @@ makedocs(;
         "Models" => "models.md",
         "Examples" => [
             "Minimal example" => "mwe.md",
-            "Stock splits" => "stock_splits.md",
+            # "Stock splits" => "stock_splits.md",
             "Rate hikes and market indicators" => "nifty.md",
-            "Sex ratio at birth" => "sex_ratio_at_birth.md"
+            # "Sex ratio at birth" => "sex_ratio_at_birth.md"
         ]
     ],
 )

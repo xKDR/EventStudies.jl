@@ -3,6 +3,7 @@ module EventStudies
 using Dates, Statistics
 
 using TSFrames, DataFrames
+using RData # RData is used only for examples!
 
 using ThreadPools # efficient multithreading
 

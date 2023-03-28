@@ -7,6 +7,7 @@ using MarketData
 using Dates
 using DataFrames
 using EventStudies
+using CairoMakie
 
 # First, get data about stock prices from MarketData.jl:
 
@@ -29,7 +30,7 @@ fed_rate_dates = filter(:VALUE => >(0), fed_rate_diffs.coredata)
 #                          Nifty                           #
 ############################################################
 
-phystime_returns_ts, event_status = EventStudies.to_eventtime_windowed(levels_to_returns(nifty), (:NIFTY,) .=> fed_rate_dates.Index, -6:7, #=MarketModel(levels_to_returns(fed_rate))=#)
+phystime_returns_ts, event_status = EventStudies.eventstudy(levels_to_returns(nifty), (:NIFTY,) .=> fed_rate_dates.Index, -6:7, #=MarketModel(levels_to_returns(fed_rate))=#)
 t0, lower, upper = inference(BootstrapInference(), phystime_returns_ts)
 N = 200
 times = (phystime_returns_ts.Index .|> Dates.value) .+ 365
@@ -66,7 +67,7 @@ f
 ############################################################
 
 
-phystime_returns_ts, event_status = EventStudies.to_eventtime_windowed(levels_to_returns(usd_inr), (:USDINR,) .=> fed_rate_dates.Index, -6:7)
+phystime_returns_ts, event_status = EventStudies.eventstudy(levels_to_returns(usd_inr), (:USDINR,) .=> fed_rate_dates.Index, -6:7)
 t0, lower, upper = inference(BootstrapInference(), phystime_returns_ts)
 
 phystime_returns_ts = remap_cumsum(phystime_returns_ts)
@@ -110,4 +111,4 @@ f
 
 
 
-save("usdinr_2.pdf", f; pt_per_unit = 1)
+# save("usdinr_2.pdf", f; pt_per_unit = 1)
