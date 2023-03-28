@@ -47,10 +47,11 @@ makedocs(;
             "Minimal example" => "examples/mwe.md",
             # "Stock splits" => "stock_splits.md",
             "Rate hikes and market indicators" => "examples/nifty.md",
-            # "Sex ratio at birth" => "sex_ratio_at_birth.md",
-            # "Replicating eventstudies.R" => "replications.jl",
+            "Sex ratio at birth" => "sex_ratio_at_birth.md",
+            "Replicating eventstudies.R" => "replications.jl",
         ],
         "Developer docs" => [
+            "Artifacts and data" => "artifacts.md",
             "Market model implementation" => "marketmodel.md"
         ]
     ],

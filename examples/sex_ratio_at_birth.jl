@@ -4,25 +4,25 @@
 
 ## Load the packages:
 using TSFrames         # time series package - EventStudies only accepts this, since it has a defined index type
-using DataFrames, CSV  # data loading + management
 using EventStudies     # event study package
 using CairoMakie       # plotting
-using CairoMakie.Makie # plotting
 
-# Load the data
-data = CSV.read(EventStudies.assetpath("bigdata.csv"), DataFrame; missingstring = "NA")
-# This data is in "long" format, so we need to convert it to "wide" format:
-# Group by country
+# Load the data.
+data = EventStudies.load_data("bigdata.csv")
+# This data is in "long" format, so we need to convert it to "wide" format.
+
+# We do this by grouping by country,
 country_data = groupby(data, :country)
-# Filter to only include countries with events defined
+# filtering to only include countries with events defined,
 countries_with_events = filter(sdf -> !(all(ismissing.(sdf.intyear_es))), country_data)
-# Create a TSFrame with the `sex_rat` variable for each country
+# and finally, creating a TSFrame with the `sex_rat` variable for each country.
 relevant_country_ts = TSFrames.join((TSFrame(DataFrame([:Index => sdf.year_es, Symbol(sdf.country[1]) => sdf.sex_rat])) for sdf in countries_with_events)...; jointype = :inner)
 # Create a mapping from country to event time, for each event.
-# Note that this can have multiple events per country
+
+# Note that this can have multiple events per country.
 event_times = [Symbol(sdf.country[1]) => sdf.intyear_es[findfirst(!ismissing, sdf.intyear_es)] for sdf in countries_with_events]
 # Convert to event time using EventStudies.jl (perform the event study).
-eventtime_ts, retcodes = EventStudies.to_eventtime_windowed(levels_to_returns(relevant_country_ts), event_times, 4)
+eventtime_ts, retcodes = EventStudies.eventstudy(levels_to_returns(relevant_country_ts), event_times, 4)
 # Perform bootstrap inference with a 95% confidence interval
 t0, lower, upper = inference(BootstrapInference(), eventtime_ts, 0.95)
 # we're technically done with the event study here!
@@ -117,7 +117,7 @@ fig
 # replicate eventstudies.R results
 
 # convert to event time
-eventtime_ts, retcodes = EventStudies.to_eventtime_windowed(levels_to_returns(relevant_country_ts), event_times, -2:3)
+eventtime_ts, retcodes = EventStudies.eventstudy(levels_to_returns(relevant_country_ts), event_times, -2:3)
 # perform inference with a 95% confidence interval
 t0, lower, upper = inference(BootstrapInference(), eventtime_ts, 0.95)
 # we're technically done with the event study here!

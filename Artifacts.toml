@@ -1,0 +1,13 @@
+[eventstudies_csv_data]
+git-tree-sha1 = "b111e39808f5fc87d8b1807e1f34891e130eeb27"
+
+    [[eventstudies_csv_data.download]]
+    sha256 = "17538d471a585bfc32542e0edb3e7a5b661c86096ec490d0bd719f82ef67143b"
+    url = "https://github.com/xKDR/EventStudies.jl/releases/download/v0.0.1-DEV/eventstudies_csv_data.tar.gz"
+
+[eventstudies_r_data]
+git-tree-sha1 = "5a096a937a656fc640a08af43251d3822a0dbbe4"
+
+    [[eventstudies_r_data.download]]
+    sha256 = "a33e8b1e25068ab08e29b64008b50d7670795f461416c544dc4a79d87fd41d61"
+    url = "https://github.com/xKDR/EventStudies.jl/releases/download/v0.0.1-DEV/eventstudies_r_data.tar.gz"

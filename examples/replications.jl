@@ -6,7 +6,7 @@ using CairoMakie
 # ## Stock splits
 
 # First, we'll load the stock split data from eventstudies.R.
-stock_returns = EventStudies.zoo_to_tsframe(RData.load("/Users/anshul/Documents/Business/India/XKDR/code/eventstudies/data/StockPriceReturns.rda"; convert = false)["StockPriceReturns"])
+stock_returns = EventStudies.load_data("StockPriceReturns.rda")
 split_dates_df = RData.load("/Users/anshul/Documents/Business/India/XKDR/code/eventstudies/data/SplitDates.rda"; convert = true)["SplitDates"]
 other_returns = EventStudies.zoo_to_tsframe(RData.load("/Users/anshul/Documents/Business/India/XKDR/code/eventstudies/data/OtherReturns.rda"; convert = false)["OtherReturns"])
 
@@ -72,7 +72,7 @@ Makie.current_figure()
 # ## Intraday data
 
 aggregate_returns = EventStudies.zoo_to_tsframe(RData.load("/Users/anshul/Documents/Business/India/XKDR/code/eventstudies/data/AggregateReturns.rda"; convert = false)["AggregateReturns"])
-rate_cuts_df = RData.load("/Users/anshul/Documents/Business/India/XKDR/code/eventstudies/data/RateCuts.rda"; convert = true)["RateCuts"]
+rate_cuts_df = RData.load("/Users/anshul/Documents/Business/India/XKDR/code/eventstudies/data/RateCuts.rda"; convert = false)["RateCuts"]
 index_returns = EventStudies.zoo_to_tsframe(RData.load("/Users/anshul/Documents/Business/India/XKDR/code/eventstudies/data/IndexReturns.rda"; convert = false)["IndexReturns"])
 
 intraday_eventtime_ts, event_return_codes = eventstudy(
