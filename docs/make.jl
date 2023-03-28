@@ -16,10 +16,9 @@ literate_files = joinpath.(
     example_path,
     [
         "mwe.jl",
-        # "stock_splits.jl",
         "nifty.jl",
-        "sex_ratio_at_birth.jl"
-        "replications.jl"
+        "sex_ratio_at_birth.jl",
+        "replications.jl",
     ]
 )
 
@@ -46,7 +45,6 @@ makedocs(;
         "Models" => "models.md",
         "Examples" => [
             "Minimal example" => "examples/mwe.md",
-            # "Stock splits" => "stock_splits.md",
             "Rate hikes and market indicators" => "examples/nifty.md",
             "Sex ratio at birth" => "sex_ratio_at_birth.md",
             "Replicating eventstudies.R" => "replications.jl",
