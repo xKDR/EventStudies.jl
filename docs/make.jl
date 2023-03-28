@@ -18,7 +18,8 @@ literate_files = joinpath.(
         "mwe.jl",
         # "stock_splits.jl",
         "nifty.jl",
-        # "sex_ratio_at_birth.jl"
+        "sex_ratio_at_birth.jl"
+        "replications.jl"
     ]
 )
 
