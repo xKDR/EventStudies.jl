@@ -41,7 +41,7 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
-        "Event time" => "event_time.md"
+        "Event time" => "event_time.md",
         "Models" => "models.md",
         "Examples" => [
             "Minimal example" => "examples/mwe.md",
@@ -52,7 +52,7 @@ makedocs(;
         ],
         "Developer docs" => [
             "Artifacts and data" => "artifacts.md",
-            "Market model implementation" => "marketmodel.md"
+            "Market model implementation" => "marketmodel.md",
         ]
     ],
 )
