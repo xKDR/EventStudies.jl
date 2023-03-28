@@ -52,7 +52,7 @@ It then returns a `TSFrame` of event windows, where each column is the event ret
 - `model` is an [`AbstractEventStudyModel`](@ref) which is used to transform the data before calculating the event returns.
 - `debug` is a boolean which indicates whether to print debug information.
 """
-function to_eventtime_windowed(return_timeseries::TSFrame, event_times::Vector{Pair{Symbol, T}}, window::Union{Integer, AbstractVector{<: Integer}}, model::AbstractEventStudyModel = NoModel(); debug = false) where T
+function to_eventtime_windowed(return_timeseries::TSFrame, event_times::Vector{Pair{Symbol, T}}, window::Union{Integer, AbstractVector{<: Integer}}, model::Models.AbstractModel = NoModel(); debug = false) where T
     if window isa Integer
         @assert window ≥ 1 "The window must have a length greater than 1!  The provided window length was $window."
     end

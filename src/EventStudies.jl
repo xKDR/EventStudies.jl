@@ -16,7 +16,8 @@ export remap_cumsum # remove before release
 # export NoModel, MarketModel, AugmentedMarketModel, ExcessReturn, ConstantMeanReturn
 include("Models/Models.jl")
 using .Models
-export GLM.StatsBase.fit, apply, MarketModel, MarketModelResult
+export fit, fit!, apply
+export MarketModel, MarketModelResult
 
 include("inference.jl")
 export inference, ClassicInference, BootstrapInference, WilcoxonInference

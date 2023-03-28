@@ -41,8 +41,26 @@ nifty_returns = levels_to_returns(nifty)
 
 # We create a MarketModel object, which will be used to apply the market model to the stock returns:
 market_model = MarketModel(nifty_returns)
+data = nifty_ticker_returns_tsframe[:, [:var"RELIANCE.NS"]]
+fit!(market_model, data)
+ret = EventStudies.Models.apply(market_model, TSFrame(data.coredata[5000:end, :]))
+
+f, a, p = lines(Dates.value.(index(data)[5000:end] .- Date(2015, 1, 1)), (TSFrame(data.coredata[5000:end, [:var"RELIANCE.NS"]]) |> EventStudies.remap_cumsum).var"RELIANCE.NS"; label = "RELIANCE.NS")
+dmret = TSFrame(dropmissing(ret.coredata))
+p2 = lines!(a, Dates.value.(index(dmret) .- Date(2015, 1, 1)), (dmret |> EventStudies.remap_cumsum).var"RELIANCE.NS"; label = "Reliance after market model")
+nmnr = TSFrame(dropmissing(nifty_returns.coredata))
+p2 = lines!(a, Dates.value.(index(nmnr) .- Date(2015, 1, 1)), (nmnr |> EventStudies.remap_cumsum).var"NIFTY"; label = "NIFTY index")
+Makie.current_figure()
+xlims!(a, 0, nothing)
+f
+axislegend(a, position = :rb)
+a.title = "Market model on NIFTY index"
+a.xlabel = "Days since 1/1/2015"
+a.ylabel = "Cumulative returns (%)"
+f
 
 # We perform an eventstudy while passing this market model:
+# TODO this doesn't work yet!
 eventtime_return_ts, success_codes = to_eventtime_windowed(
     nifty_ticker_returns_tsframe,
     [],
