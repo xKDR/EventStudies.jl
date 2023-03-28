@@ -1,9 +1,7 @@
-
-using RData, CSV
 using DataFrames, TSFrames
 using EventStudies
 
-splits_df = RData.load("/Users/anshul/Documents/Business/India/XKDR/code/eventstudies/data/SplitDates.rda")["SplitDates"]
+splits_df = EventStudies.load_data("SplitDates.rda")
 prices_df = CSV.read(joinpath(dirname(@__DIR__), "assets", "spr.csv"), DataFrame; missingstring = "NA")
 nifty = TSFrame(MarketData.yahoo("^NSEI"))
 select!(nifty.coredata, :Index, :AdjClose => :NIFTY)

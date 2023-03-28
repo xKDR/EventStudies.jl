@@ -1,5 +1,3 @@
-using RData, CodecXz
-
 using EventStudies, TSFrames, DataFrames, Dates, MarketData
 using CairoMakie
 
@@ -7,8 +5,8 @@ using CairoMakie
 
 # First, we'll load the stock split data from eventstudies.R.
 stock_returns = EventStudies.load_data("StockPriceReturns.rda")
-split_dates_df = RData.load("/Users/anshul/Documents/Business/India/XKDR/code/eventstudies/data/SplitDates.rda"; convert = true)["SplitDates"]
-other_returns = EventStudies.zoo_to_tsframe(RData.load("/Users/anshul/Documents/Business/India/XKDR/code/eventstudies/data/OtherReturns.rda"; convert = false)["OtherReturns"])
+split_dates_df = EventStudies.load_data("SplitDates.rda")
+other_returns = EventStudies.load_data("OtherReturns.rda")
 
 # ### No model
 # Let's try a regular event study, with no model:
@@ -71,9 +69,9 @@ Makie.current_figure()
 
 # ## Intraday data
 
-aggregate_returns = EventStudies.zoo_to_tsframe(RData.load("/Users/anshul/Documents/Business/India/XKDR/code/eventstudies/data/AggregateReturns.rda"; convert = false)["AggregateReturns"])
-rate_cuts_df = RData.load("/Users/anshul/Documents/Business/India/XKDR/code/eventstudies/data/RateCuts.rda"; convert = false)["RateCuts"]
-index_returns = EventStudies.zoo_to_tsframe(RData.load("/Users/anshul/Documents/Business/India/XKDR/code/eventstudies/data/IndexReturns.rda"; convert = false)["IndexReturns"])
+aggregate_returns = EventStudies.load_data("AggregateReturns.rda")
+rate_cuts_df = EventStudies.load_data("RateCuts.rda")
+index_returns = EventStudies.load_data("IndexReturns.rda")
 
 intraday_eventtime_ts, event_return_codes = eventstudy(
     aggregate_returns,
