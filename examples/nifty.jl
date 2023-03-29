@@ -28,84 +28,64 @@ fed_rate_diffs = diff(fed_rate_2007)
 dropmissing!(fed_rate_diffs.coredata)
 fed_rate_dates = filter(:VALUE => >(0), fed_rate_diffs.coredata)
 
-############################################################
-#                          Nifty                           #
-############################################################
+# Then, we perform the event studies!
 
-phystime_returns_ts, event_status = EventStudies.eventstudy(levels_to_returns(nifty), (:NIFTY,) .=> fed_rate_dates.Index, -6:7, #=MarketModel(levels_to_returns(fed_rate))=#)
-t0, lower, upper = inference(BootstrapInference(), phystime_returns_ts)
-N = 200
-times = (phystime_returns_ts.Index .|> Dates.value) .+ 365
-y_vals, y_colors = EventStudies.inference_surface(BootstrapInference(), phystime_returns_ts; density = N)
+# ## NIFTY
 
-# plot
-f, a, p = lines(times, t0; label = "Mean over all events")
-sp = surface!(a, permutedims(reduce(hcat, fill(times, N))), y_vals, y_colors; shading = false, colormap = :diverging_bwr_55_98_c37_n256)
-translate!(p, 0,0,-99)
-translate!(sp, 0,0,-100)
+eventtime_returns_ts, event_status = EventStudies.eventstudy(
+    levels_to_returns(nifty), 
+    (:NIFTY,) .=> fed_rate_dates.Index, 
+    -6:7
+    )
 
-p.color = Makie.wong_colors()[3]
+eventtime_cumulative_ts = remap_cumsum(eventtime_returns_ts)
+t0, lower, upper = inference(BootstrapInference(), eventtime_cumulative_ts)
 
-cb = Colorbar(f[1, 2], sp; label = "Confidence level")
-cb.ticks = WilkinsonTicks(8; k_min = 5, k_max = 10)
+eventtime_cumulative_ts
+
+# plot the result
+
+f, a, p = scatterlines(index(eventtime_cumulative_ts), t0; label = "Mean over all events")
+p2 = band!(a, index(eventtime_cumulative_ts), lower, upper; label = "95% CI")
+translate!(p, 0, 0, 1) # bring the scatterlines to the front
+
 leg = axislegend(a; position = :rt)
 
-a.title = "Nifty performance after a Fed rate hike"
+a.title = "NIFTY index performance after a Fed rate hike"
 a.subtitle = rich(rich("t=0", font = to_font("Fira Mono")), " indicates the time of rate hike")
 a.titlealign = :left
 a.xlabel = "Event time (days)"
-a.ylabel = "NIFTY returns"
+a.ylabel = "NIFTY returns (%)"
 a.xticks = WilkinsonTicks(8; k_min = 5, k_max = 10)
-
 f
+
 
 # save("nifty.pdf", f; pt_per_unit = 1)
 
 
-############################################################
-#                          USDINR                          #
-############################################################
+# ## USD/INR
 
 
-phystime_returns_ts, event_status = EventStudies.eventstudy(levels_to_returns(usd_inr), (:USDINR,) .=> fed_rate_dates.Index, -6:7)
-t0, lower, upper = inference(BootstrapInference(), phystime_returns_ts)
+eventtime_returns_ts, event_status = EventStudies.eventstudy(levels_to_returns(usd_inr), (:USDINR,) .=> fed_rate_dates.Index, -6:7)
 
-phystime_returns_ts = remap_cumsum(phystime_returns_ts)
+eventtime_cumulative_ts = remap_cumsum(eventtime_returns_ts)
+t0, lower, upper = inference(BootstrapInference(), eventtime_cumulative_ts)
 
-N = 100
-xs = (phystime_returns_ts.Index .|> Dates.value) .+ 365
-deviations = LinRange(0.5, 0.975, N÷2)
+eventtime_cumulative_ts
 
-x_vals = permutedims(hcat(fill(xs, N)...))
-y_vals = zeros(N, length(xs))
-y_colors = zeros(N, length(xs))
+# plot the result
 
-for (y_ind, deviation) in enumerate(deviations)
-    t0, lower, upper = inference(BootstrapInference(), phystime_returns_ts, deviation)
-    y_vals[50 - y_ind + 1, :] .= lower
-    y_vals[50 + y_ind , :] .= upper
-    y_colors[50 - y_ind + 1, :] .= 1 - deviation
-    y_colors[50 + y_ind , :] .= deviation
-    
-end
+f, a, p = scatterlines(index(eventtime_cumulative_ts), t0; label = "Mean over all events")
+p2 = band!(a, index(eventtime_cumulative_ts), lower, upper; label = "95% CI")
+translate!(p, 0, 0, 1) # bring the scatterlines to the front
 
-# plot
-f, a, p = lines((phystime_returns_ts.Index .|> Dates.value) .+ 365, t0; label = "Mean over all events")
-sp = surface!(a, x_vals, y_vals, y_colors; shading = false, colormap = :diverging_bwr_55_98_c37_n256)
-translate!(p, 0,0,1)
-f
-p.color = Makie.wong_colors()[3]
-f
-
-cb = Colorbar(f[1, 2], sp; label = "Confidence level")
-cb.ticks = WilkinsonTicks(8; k_min = 5, k_max = 10)
 leg = axislegend(a; position = :rt)
 
 a.title = "USD-INR performance after a Fed rate hike"
 a.subtitle = rich(rich("t=0", font = to_font("Fira Mono")), " indicates the time of rate hike")
 a.titlealign = :left
 a.xlabel = "Event time (days)"
-a.ylabel = "USD-INR returns"
+a.ylabel = "USD-INR returns (%)"
 a.xticks = WilkinsonTicks(8; k_min = 5, k_max = 10)
 f
 

@@ -23,16 +23,16 @@ t0, lower, upper = EventStudies.inference(BootstrapInference(), eventtime_ts |> 
 
 # and plot the results!
 
-scatterlines(-6:7, t0; label = "Mean")
-lines!(-6:7, upper; color = Makie.wong_colors(0.5)[1], linestyle = :dash, label = "95% CI")
-lines!(-6:7, lower; color = Makie.wong_colors(0.5)[1], linestyle = :dash)
+scatterlines(index(eventtime_ts), t0; label = "Mean")
+lines!(index(eventtime_ts), upper; color = Makie.wong_colors(0.5)[1], linestyle = :dash, label = "95% CI")
+lines!(index(eventtime_ts), lower; color = Makie.wong_colors(0.5)[1], linestyle = :dash)
 ## spruce up the figure
 axislegend(Makie.current_axis(); position = :lt)
 Makie.current_axis().xlabel = "Event time (days)"
 Makie.current_axis().ylabel = "Return (%)"
 Makie.current_axis().title = "Event study of stock splits"
 Makie.current_axis().titlealign = :left
-Makie.current_axis().subtitle = "In the Indian market, with the NIFTY index applied as a market model"
+Makie.current_axis().subtitle = "In the Indian market, with no market model applied"
 translate!(Makie.current_axis().scene.plots[1], 0, 0, 1)
 Makie.current_figure()
 
@@ -52,9 +52,9 @@ t0, lower, upper = EventStudies.inference(BootstrapInference(), eventtime_ts |> 
 
 # and the plots!
 
-scatterlines(-6:7, t0; label = "Mean")
-lines!(-6:7, upper; color = Makie.wong_colors(0.5)[1], linestyle = :dash, label = "95% CI")
-lines!(-6:7, lower; color = Makie.wong_colors(0.5)[1], linestyle = :dash)
+scatterlines(index(eventtime_ts), t0; label = "Mean")
+lines!(index(eventtime_ts), upper; color = Makie.wong_colors(0.5)[1], linestyle = :dash, label = "95% CI")
+lines!(index(eventtime_ts), lower; color = Makie.wong_colors(0.5)[1], linestyle = :dash)
 ## spruce up the figure
 axislegend(Makie.current_axis(); position = :lt)
 Makie.current_axis().xlabel = "Event time (days)"
@@ -84,7 +84,10 @@ intraday_eventtime_ts.coredata[1, :] .= 0
 
 t0, lower, upper = EventStudies.inference(BootstrapInference(), intraday_eventtime_ts |> EventStudies.remap_cumsum)
 
-
+lines(t0)
+lines!(lower)
+line!(upper)
+Makie.current_figure()
 
 # ## Something else
 
