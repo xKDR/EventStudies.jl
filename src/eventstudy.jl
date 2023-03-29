@@ -63,10 +63,11 @@ function eventstudy(
     return_timeseries::TSFrame, 
     event_times::Vector{Pair{Symbol, T}}, 
     window::Union{Integer, AbstractVector{<: Integer}},
-    model = nothing; 
+    model = nothing,
+    map_function::F = ThreadPools.qmap,
+    ; 
     verbose = true,
-    # parallelizer = ThreadPools.qmap,
-    ) where T
+    ) where {T, F}
     # to = Main.to
     if window isa Integer
         @assert window ≥ 1 "The window must have a length greater than 1!  The provided window length was $window."
@@ -97,7 +98,10 @@ function eventstudy(
         # do nothing
     else
         # apply these events in parallel
-        ThreadPools.qmap(zip(event_time_indices, event_tsframes)) do (event_time_index, event_data)
+        # In general, `map_function` will be `ThreadPools.qmap`,
+        # but in certain cases if multithreading is not performing correctly,
+        # the user can override that.
+        map_function(zip(event_time_indices, event_tsframes)) do (event_time_index, event_data)
             colname = names(event_data)[1]
             # fit the model to all data before the window
             model = fit(model, return_timeseries[1:(event_time_index - first_window_offset), [Symbol(colname)]])
