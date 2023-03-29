@@ -1,12 +1,14 @@
-using EventStudies
+# Set some environment variables for display
+ENV["DATAFRAMES_ROWS"] = 5
+
 using Documenter
 using Literate
 
+using EventStudies
 using CairoMakie
 CairoMakie.activate!(pt_per_unit = 0.75, type = :svg)
 Makie.inline!(true)
 
-ENV["DATAFRAMES_ROWS"] = 5
 
 DocMeta.setdocmeta!(
     EventStudies, 
