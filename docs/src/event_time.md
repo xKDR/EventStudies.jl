@@ -5,7 +5,7 @@ Event time is the fundamental concept of the event study.  When an event study i
 `EventStudies.jl` offers a simple interface to perform direct conversion of a timeseries and a set of events to event time, with the [`physical_to_event_time`](@ref) function:
 
 ```@docs
-physical_to_event_time
+EventStudies.physical_to_event_time
 ```
 
 ## Event codes
@@ -17,5 +17,5 @@ Ignored events have an event code which describes _why_ they were ignored; succe
 
 ```@autodocs
 Modules = [EventStudies]
-Filter = x -> typeof(x) === DataType && x <: EventStatus
+Filter = x -> typeof(x) === DataType && x <: EventStudies.EventStatus
 ```
