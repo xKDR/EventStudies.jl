@@ -148,6 +148,18 @@ function eventstudy(
     return (event_timeseries, event_return_codes)
 end
 
+"""
+    physical_to_event_time(timeseries::TSFrame, event_times::Vector{Pair{Symbol, T}}, window::Union{Integer, AbstractVector{<: Integer}}, model = nothing) where T
+
+Converts the input `TSFrame` to a vector of `TSFrame`s - one per successful event, centered around the event time.
+
+Arguments are the same as `eventstudy`.  Note that `model` is not applied here, but its contents are checked to ensure that the model has data in that span.
+
+Returns a tuple `(event_tsframes, event_time_indices, event_return_codes)`:
+- `event_tsframes::Vector{TSFrame}`: a vector of `TSFrame`s, one per successful event.
+- `event_time_indices::Vector{Int}`: the (integer) indices in `timeseries` of the events.
+- `event_return_codes::Vector{EventStatus}`: the status of each event.  This is a vector of [`EventStudies.EventStatus`](@ref) objects, of the same length as the input `event_times`.
+"""
 function physical_to_event_time(return_timeseries::TSFrame, event_times::Vector{Pair{Symbol, T}}, window::Union{Integer, AbstractVector{<: Integer}}, model = nothing) where T
 
     # initialize the return codes array

@@ -5,6 +5,7 @@
 ## Load the packages:
 using TSFrames         # time series package - EventStudies only accepts this, since it has a defined index type
 using EventStudies     # event study package
+using DataFrames       # data manipulation
 using CairoMakie       # plotting
 
 # Load the data.

@@ -18,6 +18,6 @@ Finally, you have to implement `StatsBase.predict(model::MyModel, data::TSFrame)
 Optionally, you can also implement `Models.check_window(model::MyModel, window)::Bool`, which checks whether the given window exists in your model.
 
 ```@docs
-EventStudies.StatsBase.fit!
-EventStudies.StatsBase.predict
+EventStudies.Models.StatsBase.fit!
+EventStudies.Models.StatsBase.predict
 ```
