@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Market model implementation · EventStudies.jl</title><script data-outdated-warner src="../assets/warner.js"></script><link rel="canonical" href="https://xKDR.github.io/EventStudies.jl/marketmodel/"/><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.045/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.24/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">EventStudies.jl</a></span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><a class="tocitem" href="../event_time/">Event time</a></li><li><a class="tocitem" href="../models/">Models</a></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../examples/mwe/">Minimal example</a></li><li><a class="tocitem" href="../examples/nifty/">Rate hikes and market indicators</a></li><li><a class="tocitem" href="../examples/sex_ratio_at_birth/">Sex ratio at birth</a></li><li><a class="tocitem" href="../examples/replications/">Replicating eventstudies.R</a></li></ul></li><li><span class="tocitem">Developer docs</span><ul><li><a class="tocitem" href="../artifacts/">Artifacts and data</a></li><li class="is-active"><a class="tocitem" href>Market model implementation</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Developer docs</a></li><li class="is-active"><a href>Market model implementation</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Market model implementation</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/xKDR/EventStudies.jl/blob/main/docs/src/marketmodel.md#" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Creating-a-market-model-using-TSFrames"><a class="docs-heading-anchor" href="#Creating-a-market-model-using-TSFrames">Creating a market model using TSFrames</a><a id="Creating-a-market-model-using-TSFrames-1"></a><a class="docs-heading-anchor-permalink" href="#Creating-a-market-model-using-TSFrames" title="Permalink"></a></h1><p>In this example, we will create a market model, and create dispatches on StatsBase functions to define how to fit and apply the model.</p><p>First, we define the struct:</p><pre><code class="language-julia hljs">&quot;&quot;&quot;
+    struct MarketModel &lt;: AbstractModel
+    MarketModel(market_returns::TSFrame)
+
+A model which fits the firm&#39;s returns to the market returns,
+using some provided index or market indicator.
+
+Fit using `fit` or `fit!`, and apply to data using `apply`</code></pre><p>Fields</p><pre><code class="language-julia hljs">$(FIELDS)
+&quot;&quot;&quot;
+struct MarketModel &lt;: AbstractModel
+    &quot;A TSFrame which holds the market indicator/index data.&quot;
+    market_returns::TSFrame
+    &quot;The coefficients of the fit.  Set by `fit!`.&quot;
+    coefs::Vector{Float64}
+end</code></pre><p>This has two fields, <code>market_returns</code> which holds the market&#39;s returns (<code>diff(log.(price_at_close))</code>) as a timeseries (<code>TSFrame</code>), and a vector of coefficients (in our case, this is <span>$\alpha$</span> and <span>$\beta$</span>).</p><p>You might notice that <code>coefs</code> is a vector and not a 2-tuple, which seems more efficient; however, we want to be able to mutate the coefficients after construction, so we use a <code>Vector</code>, which is mutable.</p><p>This defines a convenience constructor, to construct a model without fitting it. Note that the <code>coefs</code> field is set to <code>NaN</code> by default, so that if the model is used before fitting, it will return all NaNs to indicate that something is wrong.</p><pre><code class="language-julia hljs">MarketModel(market_returns::TSFrame) = MarketModel(market_returns, Float64[NaN64, NaN64])</code></pre><p>We define a short method to check whether a window is located within the model&#39;s market return timeseries:</p><pre><code class="language-julia hljs">function check_window(model::MarketModel, window, event_time)
+    # error if the index types are not the same
+    @assert typeof(event_time) == eltype(index(model.market_returns))
+    # find the index of the event time
+    event_time_index = searchsortedfirst(index(model.market_returns), event_time)
+    first_index = (first(window) + event_time_index)
+    last_index  = (last(window) + event_time_index)
+    # check if the window is within the market returns&#39; timespan
+    window_compatible = first_index ≥ 1 &amp;&amp; last_index ≤ length(model.market_returns)
+    # check if any of the market data in the window has missing values
+    market_data_compatible = !any(ismissing.(model.market_returns.coredata[first_index:last_index, 2]))
+    return window_compatible &amp; market_data_compatible
+end</code></pre><p>Now, we move on to fitting the model.  This is simple enough, just defining an overload for <code>StatsBase.fit!</code>, which uses a linear model from GLM.jl.</p><pre><code class="language-julia hljs">function StatsBase.fit!(model::MarketModel, data::TSFrame)
+    # merge the market data with the provided data
+    merged_market_ts = TSFrames.join(model.market_returns, data; jointype = :JoinRight)
+    # apply the model to the data
+    linear_model = GLM.lm(
+        GLM.Term(Symbol(first(names(data)))) ~ GLM.Term(Symbol(first(names(model.market_returns)))),
+        merged_market_ts.coredata[!, 2:end]
+    )
+    ct = GLM.coeftable(linear_model)
+    α, β = ct.cols[1]
+    model.coefs[1] = α
+    model.coefs[2] = β
+    return model
+end</code></pre><p>By using the verbose <code>GLM.Term(Symbol(...))</code> syntax, we were able to replicate the behaviour of the <code>@formula</code> macro from GLM programmatically. This lets us hook in to the nice GLM machinery for fitting tables, as opposed to fitting matrices which is less nice.</p><p>Now, we define a convenience function to fit the model, which returns a new model, rather than mutating the old one.</p><pre><code class="language-julia hljs">function StatsBase.fit(model::MarketModel, data::TSFrame)
+    new_model = MarketModel(model.market_returns)
+    fit!(new_model, data)
+    return new_model
+end</code></pre><p>Finally, we define a function to apply the model to data.  This is a bit more complicated, as we need to do some data manipulation to get the data into the right shape. Basically, we merge teh market data with the intercecpt data (so that their time indices are aligned to the input), and then subtract the intercept (<span>$\alpha$</span>), and the slope (<span>$\beta$</span>) times the market data from the data.</p><pre><code class="language-julia hljs">function StatsBase.predict(model::MarketModel, data::TSFrame)
+    ret = deepcopy(data)
+    market_data = TSFrame(TSFrames.DataFrames.leftjoin(data.coredata, model.market_returns.coredata; on = :Index))
+    for col in names(data)
+        ret.coredata[!, col] = data.coredata[!, col] .- model.coefs[1] .- model.coefs[2] .* market_data.coredata[!, first(names(model.market_returns))]
+    end
+    return ret
+end</code></pre><p>Below is some code to make use of this market model:</p><pre><code class="language-julia hljs">model = MarketModel(nifty_returns)
+GLM.StatsBase.fit!(model, data)
+ret = apply(model, TSFrame(data.coredata[5000:end, :]))
+
+f, a, p = lines(Dates.value.(index(data)[5000:end] .- Date(2015, 1, 1)), (TSFrame(data.coredata[5000:end, [:var&quot;RELIANCE.NS&quot;]]) |&gt; EventStudies.remap_cumsum).var&quot;RELIANCE.NS&quot;; label = &quot;RELIANCE.NS&quot;)
+dmret = TSFrame(dropmissing(ret.coredata))
+p2 = lines!(a, Dates.value.(index(dmret) .- Date(2015, 1, 1)), (dmret |&gt; EventStudies.remap_cumsum).var&quot;RELIANCE.NS&quot;; label = &quot;Reliance after market model&quot;)
+nmnr = TSFrame(dropmissing(nifty_returns.coredata))
+p2 = lines!(a, Dates.value.(index(nmnr) .- Date(2015, 1, 1)), (nmnr |&gt; EventStudies.remap_cumsum).var&quot;NIFTY&quot;; label = &quot;NIFTY index&quot;)
+Makie.current_figure()
+xlims!(a, 0, nothing)
+f
+axislegend(a, position = :rb)
+a.title = &quot;Market model on NIFTY index&quot;
+f</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../artifacts/">« Artifacts and data</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.24 on <span class="colophon-date" title="Wednesday 29 March 2023 02:11">Wednesday 29 March 2023</span>. Using Julia version 1.8.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
