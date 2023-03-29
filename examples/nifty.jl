@@ -13,11 +13,13 @@ using CairoMakie
 
 # NIFTY index (India)
 nifty = TSFrame(MarketData.yahoo("^NSEI"))
-select!(nifty.coredata, :Index, :AdjClose => :NIFTY)
+select!(nifty.coredata, :Index, :AdjClose => :NIFTY);
+nifty # hide
 
 # USD/INR exchange rate
 usd_inr = TSFrame(MarketData.yahoo("USDINR=X"))
-select!(usd_inr.coredata, :Index, :AdjClose => :USDINR)
+select!(usd_inr.coredata, :Index, :AdjClose => :USDINR);
+usd_inr # hide
 
 # US Fed funds rate
 fed_rate = TSFrame(MarketData.fred("FEDFUNDS"))
@@ -41,10 +43,8 @@ f, a, p = lines(times, t0; label = "Mean over all events")
 sp = surface!(a, permutedims(reduce(hcat, fill(times, N))), y_vals, y_colors; shading = false, colormap = :diverging_bwr_55_98_c37_n256)
 translate!(p, 0,0,-99)
 translate!(sp, 0,0,-100)
-f
-p.color = Makie.wong_colors()[3]
-f
 
+p.color = Makie.wong_colors()[3]
 
 cb = Colorbar(f[1, 2], sp; label = "Confidence level")
 cb.ticks = WilkinsonTicks(8; k_min = 5, k_max = 10)

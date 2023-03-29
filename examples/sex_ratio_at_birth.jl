@@ -9,6 +9,7 @@ using CairoMakie       # plotting
 
 # Load the data.
 data = EventStudies.load_data("bigdata.csv")
+show(IOContext(stdout, :compact => true), data) # hide
 # This data is in "long" format, so we need to convert it to "wide" format.
 
 # We do this by grouping by country,

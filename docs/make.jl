@@ -3,10 +3,20 @@ using Documenter
 using Literate
 
 using CairoMakie
+CairoMakie.activate!(pt_per_unit = 0.75, type = :svg)
 Makie.inline!(true)
-CairoMakie.activate!(pt_per_unit = 075, type = :svg)
 
-DocMeta.setdocmeta!(EventStudies, :DocTestSetup, :(using EventStudies); recursive=true)
+ENV["DATAFRAMES_ROWS"] = 5
+
+DocMeta.setdocmeta!(
+    EventStudies, 
+    :DocTestSetup, 
+    quote 
+        using EventStudies, Makie
+        Makie.inline!(true)
+    end;
+    recursive=true
+)
 
 # Copy the README over as index.md
 cp(joinpath(dirname(@__DIR__), "README.md"), joinpath(@__DIR__, "src", "index.md"))

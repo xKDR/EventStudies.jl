@@ -110,7 +110,8 @@ function eventstudy(
 
     # @timeit to "Constructing return object" begin
     # create an empty TSFrame with a populated index, to store the results
-    event_timeseries = TSFrame(DataFrame(:Index => window_vec), :Index)
+    event_timeseries = TSFrame(rand(length(window_vec)), window_vec)
+    select!(event_timeseries.coredata, :Index)
     # finally, push the events to the TSFrame, and add some metadata
     for (ts, event) in zip(event_tsframes, event_times[applicable_event_indices])
         # Find and disambiguate the column name
