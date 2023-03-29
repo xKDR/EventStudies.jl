@@ -4,6 +4,7 @@ using Literate
 
 using CairoMakie
 Makie.inline!(true)
+CairoMakie.activate!(pt_per_unit = 075, type = :svg)
 
 DocMeta.setdocmeta!(EventStudies, :DocTestSetup, :(using EventStudies); recursive=true)
 
@@ -47,7 +48,7 @@ makedocs(;
             "Minimal example" => "examples/mwe.md",
             "Rate hikes and market indicators" => "examples/nifty.md",
             "Sex ratio at birth" => "examples/sex_ratio_at_birth.md",
-            "Replicating eventstudies.R" => "examples/replications.jl",
+            "Replicating eventstudies.R" => "examples/replications.md",
         ],
         "Developer docs" => [
             "Artifacts and data" => "artifacts.md",

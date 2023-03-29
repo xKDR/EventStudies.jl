@@ -6,7 +6,6 @@
 using TSFrames      # EventStudies operates exclusively on TSFrames
 using EventStudies 
 using CairoMakie    # For plotting
-CairoMakie.activate!(px_per_unit = 2, pt_per_unit = 1, type = :svg) # hide
 
 # ## Creating a dataset
 
