@@ -1,0 +1,77 @@
+input data
+
+input data.ts: Input timeseries\n(TSFrame)
+input data.ts.shape: rectangle
+
+input data.event list: Event list\n(Vector\{Pair\{Symbol, TimeType\}\})
+input data.event list.shape: rectangle
+
+physical_to_event_time: |md
+  Convert physical to event time
+  physical_to_event_time
+  (input_timeseries, event_list, window [, model])
+|
+physical_to_event_time.shape: hexagon
+
+input data -> physical_to_event_time
+
+# physical_to_event_time parameters: |md
+#   ## Parameters
+#     - `window`: Window size (can be an integer or a vector-like of integers (range, vector))
+#     - `model`: A decorrelation model.  Can be any subtype of `AbstractEventStudyModel`.
+# | {
+#   near: physical_to_event_time
+# }
+
+model: |md
+  Apply and fit model
+  fit(model, data_before_window)
+  predict(model, data_in_window)
+|
+
+model.shape: hexagon
+
+physical_to_event_time -> model
+
+results
+results.event_ts: Results of the event study\n(TSFrame)
+results.retcodes: Status codes per event\n(Vector\{EventCode\})
+
+model -> results
+
+inference: inference\n(infer, results, confint)
+inference.shape: hexagon
+
+results -> inference
+
+tlu: t_0, lower, upper
+
+inference -> tlu
+
+inference parameters: |md
+  ### Parameters
+    - `infer`: An inference specification.  
+    Can be conventional inference, 
+    one of the many types of bootstrap inference, 
+    or Wilcoxson inference.
+  ### Results
+  3 vectors of values for (t0, lower, upper)
+| {
+  near: inference
+}
+
+model parameters: |md
+  ## Models
+  - Models can be anything which operates on the model, and satisfies the model interface.
+| {
+  near: model
+}
+
+phys2et description: |md
+  ## Physical to event time
+  This function takes all the data
+  in the given window and re-indexes
+  it such that the event occurs at t=0.
+| {
+  near: physical_to_event_time
+}
