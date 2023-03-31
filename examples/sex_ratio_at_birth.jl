@@ -10,6 +10,7 @@ using CairoMakie       # plotting
 
 # Load the data.
 data = EventStudies.load_data("bigdata.csv")
+show(IOContext(stdout, :limit => true), MIME("text/html"), data); # hide
 
 # This data is in "long" format, so we need to convert it to "wide" format.
 
@@ -18,7 +19,7 @@ country_data = groupby(data, :country)
 # filtering to only include countries with events defined,
 countries_with_events = filter(sdf -> !(all(ismissing.(sdf.intyear_es))), country_data)
 # and finally, creating a TSFrame with the `sex_rat` variable for each country.
-relevant_country_ts = TSFrames.join((TSFrame(DataFrame([:Index => sdf.year_es, Symbol(sdf.country[1]) => sdf.sex_rat])) for sdf in countries_with_events)...; jointype = :inner)
+relevant_country_ts = TSFrames.join((TSFrame(DataFrame([:Index => sdf.year_es, Symbol(sdf.country[1]) => sdf.sex_rat])) for sdf in countries_with_events)...; jointype = :JoinInner)
 # Create a mapping from country to event time, for each event.
 
 # Note that this can have multiple events per country.

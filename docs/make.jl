@@ -1,5 +1,5 @@
 # Set some environment variables for display
-ENV["DATAFRAMES_ROWS"] = 5
+ENV["DATAFRAMES_ROWS"] = 10
 
 using Documenter
 using Literate
@@ -63,8 +63,10 @@ makedocs(;
             "Replicating eventstudies.R" => "examples/replications.md",
         ],
         "Developer docs" => [
+            "Architecture" => "architecture.md",
             "Artifacts and data" => "artifacts.md",
             "Market model implementation" => "marketmodel.md",
+            "Autodocs" => "autodocs.md"
         ]
     ],
 )

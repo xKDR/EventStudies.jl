@@ -1,6 +1,6 @@
 # Models
 
-## Types of models
+## Available models
 
 ```@autodocs
 Modules = [EventStudies.Models]
